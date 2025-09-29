@@ -18,7 +18,7 @@ import {
   ClickUpTask, 
   ClickUpTaskAttachment 
 } from '../../services/clickup/types.js';
-import { clickUpServices } from '../../services/shared.js';
+import { ClickUpServices } from '../../services/clickup/index.js';
 import { 
   ChunkSession, 
   TaskAttachmentResponse, 
@@ -28,9 +28,6 @@ import {
 import { validateTaskIdentification } from './utilities.js';
 import { sponsorService } from '../../utils/sponsor-service.js';
 import { Logger } from '../../logger.js';
-
-// Use shared services instance
-const { task: taskService } = clickUpServices;
 
 // Create a logger instance for attachments
 const logger = new Logger('TaskAttachments');
@@ -112,7 +109,8 @@ export const attachTaskFileTool = {
 /**
  * Handler function for the attachTaskFileTool
  */
-async function attachTaskFileHandler(params: any): Promise<any> {
+export async function handleAttachTaskFile(services: ClickUpServices, params: any): Promise<any> {
+  const { task: taskService } = services;
   // Extract common parameters
   const { taskId, taskName, listName, customTaskId, file_name, file_data, file_url, auth_header,
     chunk_total, chunk_size, chunk_index, session_id } = params;
@@ -151,7 +149,7 @@ async function attachTaskFileHandler(params: any): Promise<any> {
   try {
     // CASE 1: Chunked upload continuation
     if (session_id) {
-      return await handleChunkUpload(resolvedTaskId, session_id, chunk_index, file_data, chunk_total === chunk_index + 1);
+      return await handleChunkUpload(services, resolvedTaskId, session_id, chunk_index, file_data, chunk_total === chunk_index + 1);
     }
     
     // CASE 2: URL-based upload or local file path
@@ -160,10 +158,10 @@ async function attachTaskFileHandler(params: any): Promise<any> {
       logger.debug(`Checking if path is local: ${file_url}`);
       if (file_url.startsWith('/') || /^[A-Za-z]:\\/.test(file_url)) {
         logger.debug(`Detected as local path, proceeding to handle: ${file_url}`);
-        return await handleLocalFileUpload(resolvedTaskId, file_url, file_name);
+        return await handleLocalFileUpload(services, resolvedTaskId, file_url, file_name);
       } else if (file_url.startsWith('http://') || file_url.startsWith('https://')) {
         logger.debug(`Detected as URL, proceeding with URL upload: ${file_url}`);
-        return await handleUrlUpload(resolvedTaskId, file_url, file_name, auth_header);
+        return await handleUrlUpload(services, resolvedTaskId, file_url, file_name, auth_header);
       } else {
         throw new Error(`Invalid file_url format: "${file_url}". The file_url parameter must be either an absolute file path (starting with / or drive letter) or a web URL (starting with http:// or https://)`);
       }
@@ -181,10 +179,10 @@ async function attachTaskFileHandler(params: any): Promise<any> {
       
       if (fileSize > 10 * 1024 * 1024) {
         // For large files, start chunked upload process
-        return await startChunkedUpload(resolvedTaskId, file_name, fileBuffer);
+        return await startChunkedUpload(services, resolvedTaskId, file_name, fileBuffer);
       } else {
         // For small files, upload directly
-        return await handleDirectUpload(resolvedTaskId, file_name, fileBuffer);
+        return await handleDirectUpload(services, resolvedTaskId, file_name, fileBuffer);
       }
     }
     
@@ -198,7 +196,8 @@ async function attachTaskFileHandler(params: any): Promise<any> {
 /**
  * Handle direct upload for small files
  */
-async function handleDirectUpload(taskId: string, fileName: string, fileBuffer: Buffer): Promise<TaskAttachmentResponse> {
+async function handleDirectUpload(services: ClickUpServices, taskId: string, fileName: string, fileBuffer: Buffer): Promise<TaskAttachmentResponse> {
+  const { task: taskService } = services;
   try {
     // Call service method
     const result = await taskService.uploadTaskAttachment(taskId, fileBuffer, fileName);
@@ -216,7 +215,8 @@ async function handleDirectUpload(taskId: string, fileName: string, fileBuffer: 
 /**
  * Handle URL-based upload
  */
-async function handleUrlUpload(taskId: string, fileUrl: string, fileName: string | undefined, authHeader: string | undefined): Promise<TaskAttachmentResponse> {
+async function handleUrlUpload(services: ClickUpServices, taskId: string, fileUrl: string, fileName: string | undefined, authHeader: string | undefined): Promise<TaskAttachmentResponse> {
+  const { task: taskService } = services;
   try {
     // Extract filename from URL if not provided
     const extractedFileName = fileName || new URL(fileUrl).pathname.split('/').pop() || 'downloaded-file';
@@ -240,7 +240,7 @@ async function handleUrlUpload(taskId: string, fileUrl: string, fileName: string
 /**
  * Start a chunked upload process for large files
  */
-async function startChunkedUpload(taskId: string, fileName: string, fileBuffer: Buffer): Promise<ChunkedUploadInitResponse> {
+async function startChunkedUpload(services: ClickUpServices, taskId: string, fileName: string, fileBuffer: Buffer): Promise<ChunkedUploadInitResponse> {
   // Generate a session token
   const sessionToken = `chunk_session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
   
@@ -285,12 +285,14 @@ async function startChunkedUpload(taskId: string, fileName: string, fileBuffer: 
  * Handle chunk upload as part of a multi-chunk process
  */
 async function handleChunkUpload(
+  services: ClickUpServices,
   taskId: string,
   sessionToken: string,
   chunkIndex: number | undefined,
   chunkData: string | undefined,
   isLastChunk: boolean | undefined
 ): Promise<TaskAttachmentResponse | ChunkedUploadProgressResponse> {
+  const { task: taskService } = services;
   // Verify session exists
   const session = chunkSessions.get(sessionToken);
   if (!session) {
@@ -357,7 +359,7 @@ async function handleChunkUpload(
 /**
  * Handle local file path upload
  */
-async function handleLocalFileUpload(taskId: string, filePath: string, fileName: string | undefined): Promise<TaskAttachmentResponse> {
+async function handleLocalFileUpload(services: ClickUpServices, taskId: string, filePath: string, fileName: string | undefined): Promise<TaskAttachmentResponse> {
   try {
     // Import fs and path modules
     const fs = await import('fs');
@@ -391,10 +393,10 @@ async function handleLocalFileUpload(taskId: string, filePath: string, fileName:
     // Choose upload method based on file size
     if (fileSize > 10 * 1024 * 1024) {
       // For large files, start chunked upload process
-      return await startChunkedUpload(taskId, extractedFileName, fileBuffer);
+      return await startChunkedUpload(services, taskId, extractedFileName, fileBuffer);
     } else {
       // For small files, upload directly
-      return await handleDirectUpload(taskId, extractedFileName, fileBuffer);
+      return await handleDirectUpload(services, taskId, extractedFileName, fileBuffer);
     }
   } catch (error) {
     if (error.message.includes('ENOENT')) {
@@ -405,22 +407,3 @@ async function handleLocalFileUpload(taskId: string, filePath: string, fileName:
     throw new Error(`Failed to upload local file: ${error.message}`);
   }
 }
-
-/**
- * Creates a wrapped handler function with standard error handling and response formatting
- */
-function createHandlerWrapper<T>(
-  handler: (params: any) => Promise<T>,
-  formatResponse: (result: T) => any = (result) => result
-) {
-  return async (parameters: any) => {
-    try {
-      const result = await handler(parameters);
-      return sponsorService.createResponse(formatResponse(result), true);
-    } catch (error) {
-      return sponsorService.createErrorResponse(error, parameters);
-    }
-  };
-}
-
-export const handleAttachTaskFile = createHandlerWrapper(attachTaskFileHandler); 

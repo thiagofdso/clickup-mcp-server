@@ -38,6 +38,7 @@ for (let i = 0; i < args.length; i++) {
     if (key === 'SSE_PORT') envArgs.ssePort = value;
     if (key === 'ENABLE_STDIO') envArgs.enableStdio = value;
     if (key === 'PORT') envArgs.port = value;
+    if (key === 'HEADER_AUTHENTICATION') envArgs.headerAuthentication = value;
     i++;
   }
 }
@@ -80,6 +81,7 @@ interface Config {
   ssePort: number;
   enableStdio: boolean;
   port?: string;
+  headerAuthentication: boolean;
   // Security configuration (opt-in for backwards compatibility)
   enableSecurityFeatures: boolean;
   enableOriginValidation: boolean;
@@ -157,20 +159,23 @@ const configuration: Config = {
   sslKeyPath: process.env.SSL_KEY_PATH,
   sslCertPath: process.env.SSL_CERT_PATH,
   sslCaPath: process.env.SSL_CA_PATH,
+  headerAuthentication: parseBoolean(envArgs.headerAuthentication || process.env.HEADER_AUTHENTICATION, false),
 };
 
 // Don't log to console as it interferes with JSON-RPC communication
 
 // Validate only the required variables are present
-const requiredVars = ['clickupApiKey', 'clickupTeamId'];
-const missingEnvVars = requiredVars
-  .filter(key => !configuration[key as keyof Config])
-  .map(key => key);
+if (!configuration.headerAuthentication) {
+    const requiredVars = ['clickupApiKey', 'clickupTeamId'];
+    const missingEnvVars = requiredVars
+    .filter(key => !configuration[key as keyof Config])
+    .map(key => key);
 
-if (missingEnvVars.length > 0) {
-  throw new Error(
-    `Missing required environment variables: ${missingEnvVars.join(', ')}`
-  );
+    if (missingEnvVars.length > 0) {
+        throw new Error(
+            `Missing required environment variables: ${missingEnvVars.join(', ')}`
+        );
+    }
 }
 
 export default configuration;

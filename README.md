@@ -60,6 +60,78 @@ Or use this npx command:
 
 **Obs: if you don't pass "DOCUMENT_SUPPORT": "true", the default is false and document support will not be active.**
 
+## Authentication
+
+This server supports two authentication methods:
+
+### 1. Global API Key (Default)
+
+By default, the server uses a single global ClickUp API key and Team ID for all requests. These are provided via environment variables:
+
+- `CLICKUP_API_KEY`: Your ClickUp API key.
+- `CLICKUP_TEAM_ID`: Your ClickUp Team ID.
+
+Example:
+```json
+{
+  "mcpServers": {
+    "ClickUp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@taazkareem/clickup-mcp-server@latest"
+      ],
+      "env": {
+        "CLICKUP_API_KEY": "your-api-key",
+        "CLICKUP_TEAM_ID": "your-team-id"
+      }
+    }
+  }
+}
+```
+
+### 2. Header-Based Authentication (Per-Request)
+
+For multi-user or per-request authentication scenarios, you can enable header-based authentication by setting the `HEADER_AUTHENTICATION` environment variable to `true`.
+
+When this mode is enabled, the server will expect the following headers with each request:
+
+- `X-ClickUp-API-Key`: The ClickUp API key for the user making the request.
+- `X-ClickUp-Team-ID`: The ClickUp Team ID for the user's workspace.
+
+In this mode, the global `CLICKUP_API_KEY` and `CLICKUP_TEAM_ID` environment variables are not required.
+
+Example:
+```json
+{
+  "mcpServers": {
+    "ClickUp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@taazkareem/clickup-mcp-server@latest"
+      ],
+      "env": {
+        "HEADER_AUTHENTICATION": "true"
+      }
+    }
+  }
+}
+```
+
+When making a request to the server, include the headers:
+```
+POST /mcp HTTP/1.1
+Host: 127.0.0.1:3231
+Content-Type: application/json
+X-ClickUp-API-Key: your-user-api-key
+X-ClickUp-Team-ID: your-user-team-id
+
+{
+  ...
+}
+```
+
 ### Tool Filtering
 
 You can control which tools are available using two complementary environment variables:
@@ -147,6 +219,7 @@ Available configuration options:
 | `ENABLE_HTTPS` | Enable HTTPS/TLS encryption | `false` |
 | `ENABLE_ORIGIN_VALIDATION` | Validate Origin header against whitelist | `false` |
 | `ENABLE_RATE_LIMIT` | Enable rate limiting protection | `false` |
+| `HEADER_AUTHENTICATION` | Enable header-based authentication | `false` |
 
 ### 🔒 Security Features
 

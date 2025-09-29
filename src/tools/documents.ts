@@ -9,28 +9,19 @@
  */
 
 import { CreateDocumentData, DocumentPagesOptions, UpdateDocumentPageData } from '../services/clickup/types.js';
-import { workspaceService } from '../services/shared.js';
+import { ClickUpServices } from '../services/clickup/index.js';
 import config from '../config.js';
 import { sponsorService } from '../utils/sponsor-service.js';
 import { Logger } from "../logger.js";
-import { clickUpServices } from "../services/shared.js";
 
 const logger = new Logger('DocumentTools');
-const { document: documentService } = clickUpServices;
 
 /**
  * Tool definition for creating a document
  */
 export const createDocumentTool = {
   name: "create_document",
-  description: `Creates a document in a ClickUp space, folder, or list. Requires name, parent info, visibility and create_page flag.
-
-Example usage:
-- For list: parent: {"id": "901407953112", "type": 6}
-- For space: parent: {"id": "90141392755", "type": 4}
-- For folder: parent: {"id": "90144231850", "type": 5}
-
-Note: Document creation permissions may vary by ClickUp plan and parent container type.`,
+  description: `Creates a document in a ClickUp space, folder, or list. Requires name, parent info, visibility and create_page flag.\n\nExample usage:\n- For list: parent: {"id": "901407953112", "type": 6}\n- For space: parent: {"id": "90141392755", "type": 4}\n- For folder: parent: {"id": "90144231850", "type": 5}\n\nNote: Document creation permissions may vary by ClickUp plan and parent container type.`,
   inputSchema: {
     type: "object",
     properties: {
@@ -80,7 +71,7 @@ export const getDocumentTool = {
       documentId: {
         type: "string",
         description: "ID of the document to retrieve"
-      },
+      }
     },
     required: ["documentId"]
   }
@@ -204,7 +195,7 @@ export const createDocumentPageTool = {
       },
       name: {
         type: "string",
-        description: "Name and title of the page",
+        description: "Name and title of the page"
       },
       sub_title: {
         type: "string",
@@ -257,7 +248,7 @@ export const updateDocumentPageTool = {
         type: "string",
         enum: ["text/md", "text/plain"],
         description: "Format of the content. Defaults to text/md"
-      },
+      }
     },
     required: ["documentId", "pageId"]
   }
@@ -266,7 +257,8 @@ export const updateDocumentPageTool = {
 /**
  * Helper function to find a document by title in a container
  */
-async function findDocumentByTitle(parentId: string, title: string): Promise<string | null> {
+async function findDocumentByTitle(services: ClickUpServices, parentId: string, title: string): Promise<string | null> {
+  const { document: documentService } = services;
   const response = await documentService.listDocuments({
     parent_id: parentId
   });
@@ -277,7 +269,8 @@ async function findDocumentByTitle(parentId: string, title: string): Promise<str
 /**
  * Helper function to find parent container ID by name and type
  */
-async function findParentIdByName(name: string, type: 'space' | 'folder' | 'list'): Promise<string | null> {
+async function findParentIdByName(services: ClickUpServices, name: string, type: 'space' | 'folder' | 'list'): Promise<string | null> {
+  const { workspace: workspaceService } = services;
   const hierarchy = await workspaceService.getWorkspaceHierarchy();
   const container = workspaceService.findIDByNameInHierarchy(hierarchy, name, type);
   return container ? container.id : null;
@@ -286,7 +279,8 @@ async function findParentIdByName(name: string, type: 'space' | 'folder' | 'list
 /**
  * Handler for the create_document tool
  */
-export async function handleCreateDocument(parameters: any) {
+export async function handleCreateDocument(services: ClickUpServices, parameters: any) {
+  const { document: documentService } = services;
   const { name, parent, visibility, create_page } = parameters;
 
   if (!parent || !visibility || !create_page) {
@@ -303,7 +297,7 @@ export async function handleCreateDocument(parameters: any) {
 
   try {
     // Create the document
-    const newDocument = await clickUpServices.document.createDocument(documentData);
+    const newDocument = await documentService.createDocument(documentData);
     
     return sponsorService.createResponse({
       id: newDocument.id,
@@ -320,14 +314,15 @@ export async function handleCreateDocument(parameters: any) {
 /**
  * Handler for the get_document tool
  */
-export async function handleGetDocument(parameters: any) {
+export async function handleGetDocument(services: ClickUpServices, parameters: any) {
+  const { document: documentService } = services;
   const { documentId, title, parentId } = parameters;
 
   let targetDocumentId = documentId;
 
   // If no documentId but title and parentId are provided, look up the document ID
   if (!targetDocumentId && title && parentId) {
-    targetDocumentId = await findDocumentByTitle(parentId, title);
+    targetDocumentId = await findDocumentByTitle(services, parentId, title);
     if (!targetDocumentId) {
       throw new Error(`Document "${title}" not found`);
     }
@@ -360,7 +355,8 @@ export async function handleGetDocument(parameters: any) {
 /**
  * Handler for the list_documents tool
  */
-export async function handleListDocuments(parameters: any) {
+export async function handleListDocuments(services: ClickUpServices, parameters: any) {
+  const { document: documentService } = services;
   const { 
     id,
     creator,
@@ -423,7 +419,8 @@ export async function handleListDocuments(parameters: any) {
 /**
  * Handler for listing document pages
  */
-export async function handleListDocumentPages(params: any) {
+export async function handleListDocumentPages(services: ClickUpServices, params: any) {
+  const { document: documentService } = services;
   logger.info('Listing document pages', { params });
   
   try {
@@ -439,7 +436,8 @@ export async function handleListDocumentPages(params: any) {
 /**
  * Handler for getting document pages
  */
-export async function handleGetDocumentPages(params: any) {
+export async function handleGetDocumentPages(services: ClickUpServices, params: any) {
+  const { document: documentService } = services;
   const { documentId, pageIds, content_format } = params;
 
   if (!documentId) {
@@ -458,7 +456,7 @@ export async function handleGetDocumentPages(params: any) {
       options.content_format = content_format;
     }
 
-    const pages = await clickUpServices.document.getDocumentPages(documentId, pageIds, options);
+    const pages = await documentService.getDocumentPages(documentId, pageIds, options);
     return sponsorService.createResponse(pages);
   } catch (error: any) {
     return sponsorService.createErrorResponse(`Failed to get document pages: ${error.message}`);
@@ -468,7 +466,8 @@ export async function handleGetDocumentPages(params: any) {
 /**
  * Handler for creating a new page in a document
  */
-export async function handleCreateDocumentPage(parameters: any) {
+export async function handleCreateDocumentPage(services: ClickUpServices, parameters: any) {
+  const { document: documentService } = services;
   const { documentId, content, sub_title, name, parent_page_id } = parameters;
 
   if (!documentId) {
@@ -480,11 +479,11 @@ export async function handleCreateDocumentPage(parameters: any) {
   }
 
   try {
-    const page = await clickUpServices.document.createPage(documentId, {
+    const page = await documentService.createPage(documentId, {
       content,
       sub_title,
       name,
-      parent_page_id,
+      parent_page_id
     });
 
     return sponsorService.createResponse(page);
@@ -498,7 +497,8 @@ export async function handleCreateDocumentPage(parameters: any) {
 /**
  * Handler for updating a document page
  */
-export async function handleUpdateDocumentPage(parameters: any) {
+export async function handleUpdateDocumentPage(services: ClickUpServices, parameters: any) {
+  const { document: documentService } = services;
   const { documentId, pageId, name, sub_title, content, content_format, content_edit_mode } = parameters;
 
   if (!documentId) {
@@ -518,7 +518,7 @@ export async function handleUpdateDocumentPage(parameters: any) {
   if (content_edit_mode) updateData.content_edit_mode = content_edit_mode;
 
   try {
-    const page = await clickUpServices.document.updatePage(documentId, pageId, updateData);
+    const page = await documentService.updatePage(documentId, pageId, updateData);
 
     return sponsorService.createResponse({
       message: `Page updated successfully`
@@ -529,4 +529,3 @@ export async function handleUpdateDocumentPage(parameters: any) {
     );
   }
 }
-

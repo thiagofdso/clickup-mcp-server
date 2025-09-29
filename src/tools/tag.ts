@@ -11,7 +11,7 @@
  */
 
 import { ErrorCode, ServiceResponse } from '../services/clickup/base.js';
-import { clickUpServices } from '../services/shared.js';
+import { ClickUpServices } from '../services/clickup/index.js';
 import { Logger } from '../logger.js';
 import { sponsorService } from '../utils/sponsor-service.js';
 import { ClickUpTag } from '../services/clickup/types.js';
@@ -20,9 +20,6 @@ import { validateTaskIdentification } from './task/utilities.js';
 
 // Create a logger specific to tag tools
 const logger = new Logger('TagTools');
-
-// Use shared services instance
-const { task: taskService } = clickUpServices;
 
 //=============================================================================
 // TOOL DEFINITIONS
@@ -54,21 +51,7 @@ export const getSpaceTagsTool = {
  */
 export const createSpaceTagTool = {
   name: "create_space_tag",
-  description: `Purpose: Create a new tag in a ClickUp space.
-
-Valid Usage:
-1. Provide spaceId (preferred if available)
-2. Provide spaceName (will be resolved to a space ID)
-
-Requirements:
-- tagName: REQUIRED
-- EITHER spaceId OR spaceName: REQUIRED
-
-Notes:
-- New tag will be available for all tasks in the space
-- You can specify background and foreground colors in HEX format (e.g., #FF0000)
-- You can also provide a color command (e.g., "blue tag") to automatically generate colors
-- After creating a tag, you can add it to tasks using add_tag_to_task`,
+  description: `Purpose: Create a new tag in a ClickUp space.\n\nValid Usage:\n1. Provide spaceId (preferred if available)\n2. Provide spaceName (will be resolved to a space ID)\n\nRequirements:\n- tagName: REQUIRED\n- EITHER spaceId OR spaceName: REQUIRED\n\nNotes:\n- New tag will be available for all tasks in the space\n- You can specify background and foreground colors in HEX format (e.g., #FF0000)\n- You can also provide a color command (e.g., "blue tag") to automatically generate colors\n- After creating a tag, you can add it to tasks using add_tag_to_task`,
   inputSchema: {
     type: "object",
     properties: {
@@ -106,21 +89,7 @@ Notes:
  */
 export const updateSpaceTagTool = {
   name: "update_space_tag",
-  description: `Purpose: Update an existing tag in a ClickUp space.
-
-Valid Usage:
-1. Provide spaceId (preferred if available)
-2. Provide spaceName (will be resolved to a space ID)
-
-Requirements:
-- tagName: REQUIRED
-- EITHER spaceId OR spaceName: REQUIRED
-- At least one of newTagName, tagBg, tagFg, or colorCommand must be provided
-
-Notes:
-- Changes to the tag will apply to all tasks in the space that use this tag
-- You can provide a color command (e.g., "blue tag") to automatically generate colors
-- You cannot partially update a tag - provide all properties you want to keep`,
+  description: `Purpose: Update an existing tag in a ClickUp space.\n\nValid Usage:\n1. Provide spaceId (preferred if available)\n2. Provide spaceName (will be resolved to a space ID)\n\nRequirements:\n- tagName: REQUIRED\n- EITHER spaceId OR spaceName: REQUIRED\n- At least one of newTagName, tagBg, tagFg, or colorCommand must be provided\n\nNotes:\n- Changes to the tag will apply to all tasks in the space that use this tag\n- You can provide a color command (e.g., "blue tag") to automatically generate colors\n- You cannot partially update a tag - provide all properties you want to keep`,
   inputSchema: {
     type: "object",
     properties: {
@@ -162,19 +131,7 @@ Notes:
  */
 export const deleteSpaceTagTool = {
   name: "delete_space_tag",
-  description: `Purpose: Delete a tag from a ClickUp space.
-
-Valid Usage:
-1. Provide spaceId (preferred if available)
-2. Provide spaceName (will be resolved to a space ID)
-
-Requirements:
-- tagName: REQUIRED
-- EITHER spaceId OR spaceName: REQUIRED
-
-Warning:
-- This will remove the tag from all tasks in the space
-- This action cannot be undone`,
+  description: `Purpose: Delete a tag from a ClickUp space.\n\nValid Usage:\n1. Provide spaceId (preferred if available)\n2. Provide spaceName (will be resolved to a space ID)\n\nRequirements:\n- tagName: REQUIRED\n- EITHER spaceId OR spaceName: REQUIRED\n\nWarning:\n- This will remove the tag from all tasks in the space\n- This action cannot be undone`,
   inputSchema: {
     type: "object",
     properties: {
@@ -271,15 +228,15 @@ export const removeTagFromTaskTool = {
  * Creates a wrapped handler function with standard error handling and response formatting
  */
 function createHandlerWrapper<T>(
-  handler: (params: any) => Promise<T>,
+  handler: (services: ClickUpServices, params: any) => Promise<T>,
   formatResponse: (result: T) => any = (result) => result
 ) {
-  return async (params: any) => {
+  return async (services: ClickUpServices, params: any) => {
     try {
       logger.debug('Handler called with params', { params });
       
       // Call the handler
-      const result = await handler(params);
+      const result = await handler(services, params);
       
       // Format the result for response
       const formattedResult = formatResponse(result);
@@ -372,10 +329,11 @@ export const tagTools = [
  * @param params - Space identifier (id or name)
  * @returns Tags in the space
  */
-export async function getSpaceTags(params: {
+export async function getSpaceTags(services: ClickUpServices, params: {
   spaceId?: string;
   spaceName?: string;
 }): Promise<ClickUpTag[]> {
+  const { workspace: workspaceService, tag: tagService } = services;
   const { spaceId, spaceName } = params;
   
   if (!spaceId && !spaceName) {
@@ -391,7 +349,7 @@ export async function getSpaceTags(params: {
     if (!resolvedSpaceId && spaceName) {
       logger.debug(`Resolving space name: ${spaceName}`);
       
-      const spaces = await clickUpServices.workspace.getSpaces();
+      const spaces = await workspaceService.getSpaces();
       
       const space = spaces.find(s => 
         s.name.toLowerCase() === spaceName.toLowerCase()
@@ -406,7 +364,7 @@ export async function getSpaceTags(params: {
     }
     
     // Get tags from the space
-    const tagsResponse = await clickUpServices.tag.getSpaceTags(resolvedSpaceId);
+    const tagsResponse = await tagService.getSpaceTags(resolvedSpaceId);
     
     if (!tagsResponse.success) {
       logger.error('Failed to get space tags', tagsResponse.error);
@@ -427,7 +385,7 @@ export async function getSpaceTags(params: {
  * @param params - Space identifier and tag details
  * @returns Created tag
  */
-export async function createSpaceTag(params: {
+export async function createSpaceTag(services: ClickUpServices, params: {
   spaceId?: string;
   spaceName?: string;
   tagName: string;
@@ -435,6 +393,7 @@ export async function createSpaceTag(params: {
   tagFg?: string;
   colorCommand?: string;
 }) {
+  const { workspace: workspaceService, tag: tagService } = services;
   let { spaceId, spaceName, tagName, tagBg = '#000000', tagFg = '#ffffff', colorCommand } = params;
   
   // Process color command if provided
@@ -477,7 +436,7 @@ export async function createSpaceTag(params: {
     if (!resolvedSpaceId && spaceName) {
       logger.debug(`Resolving space name: ${spaceName}`);
       
-      const spaces = await clickUpServices.workspace.getSpaces();
+      const spaces = await workspaceService.getSpaces();
       
       const space = spaces.find(s => 
         s.name.toLowerCase() === spaceName.toLowerCase()
@@ -497,7 +456,7 @@ export async function createSpaceTag(params: {
     }
     
     // Create tag in the space
-    const tagResponse = await clickUpServices.tag.createSpaceTag(resolvedSpaceId, {
+    const tagResponse = await tagService.createSpaceTag(resolvedSpaceId, {
       tag_name: tagName,
       tag_bg: tagBg,
       tag_fg: tagFg
@@ -537,7 +496,7 @@ export async function createSpaceTag(params: {
  * @param params - Space identifier, tag name, and updated properties
  * @returns Updated tag
  */
-export async function updateSpaceTag(params: {
+export async function updateSpaceTag(services: ClickUpServices, params: {
   spaceId?: string;
   spaceName?: string;
   tagName: string;
@@ -546,6 +505,7 @@ export async function updateSpaceTag(params: {
   tagFg?: string;
   colorCommand?: string;
 }) {
+  const { workspace: workspaceService, tag: tagService } = services;
   const { spaceId, spaceName, tagName, newTagName, colorCommand } = params;
   let { tagBg, tagFg } = params;
   
@@ -600,7 +560,7 @@ export async function updateSpaceTag(params: {
     if (!resolvedSpaceId && spaceName) {
       logger.debug(`Resolving space name: ${spaceName}`);
       
-      const spaces = await clickUpServices.workspace.getSpaces();
+      const spaces = await workspaceService.getSpaces();
       
       const space = spaces.find(s => 
         s.name.toLowerCase() === spaceName.toLowerCase()
@@ -631,7 +591,7 @@ export async function updateSpaceTag(params: {
     if (tagFg) updateData.tag_fg = tagFg;
     
     // Update tag in the space
-    const tagResponse = await clickUpServices.tag.updateSpaceTag(resolvedSpaceId, tagName, updateData);
+    const tagResponse = await tagService.updateSpaceTag(resolvedSpaceId, tagName, updateData);
     
     if (!tagResponse.success) {
       logger.error('Failed to update space tag', tagResponse.error);
@@ -667,11 +627,12 @@ export async function updateSpaceTag(params: {
  * @param params - Space identifier and tag name
  * @returns Success status
  */
-export async function deleteSpaceTag(params: {
+export async function deleteSpaceTag(services: ClickUpServices, params: {
   spaceId?: string;
   spaceName?: string;
   tagName: string;
 }) {
+  const { workspace: workspaceService, tag: tagService } = services;
   const { spaceId, spaceName, tagName } = params;
   
   if (!tagName) {
@@ -702,7 +663,7 @@ export async function deleteSpaceTag(params: {
     if (!resolvedSpaceId && spaceName) {
       logger.debug(`Resolving space name: ${spaceName}`);
       
-      const spaces = await clickUpServices.workspace.getSpaces();
+      const spaces = await workspaceService.getSpaces();
       
       const space = spaces.find(s => 
         s.name.toLowerCase() === spaceName.toLowerCase()
@@ -722,7 +683,7 @@ export async function deleteSpaceTag(params: {
     }
     
     // Delete tag from the space
-    const tagResponse = await clickUpServices.tag.deleteSpaceTag(resolvedSpaceId, tagName);
+    const tagResponse = await tagService.deleteSpaceTag(resolvedSpaceId, tagName);
     
     if (!tagResponse.success) {
       logger.error('Failed to delete space tag', tagResponse.error);
@@ -755,12 +716,13 @@ export async function deleteSpaceTag(params: {
 /**
  * Simple task ID resolver
  */
-async function resolveTaskId(params: {
+async function resolveTaskId(services: ClickUpServices, params: {
   taskId?: string;
   customTaskId?: string;
   taskName?: string;
   listName?: string;
 }): Promise<{ success: boolean; taskId?: string; error?: any }> {
+  const { task: taskService } = services;
   const { taskId, customTaskId, taskName, listName } = params;
   
   try {
@@ -812,13 +774,14 @@ async function resolveTaskId(params: {
  * @param params - Task identifier and tag name
  * @returns Success status
  */
-export async function addTagToTask(params: {
+export async function addTagToTask(services: ClickUpServices, params: {
   taskId?: string;
   customTaskId?: string;
   taskName?: string;
   listName?: string;
   tagName: string;
 }) {
+  const { tag: tagService } = services;
   const { taskId, customTaskId, taskName, listName, tagName } = params;
   
   if (!tagName) {
@@ -845,7 +808,7 @@ export async function addTagToTask(params: {
   
   try {
     // Resolve the task ID
-    const taskIdResult = await resolveTaskId({ taskId, customTaskId, taskName, listName });
+    const taskIdResult = await resolveTaskId(services, { taskId, customTaskId, taskName, listName });
     
     if (!taskIdResult.success) {
       return {
@@ -855,7 +818,7 @@ export async function addTagToTask(params: {
     }
     
     // Add tag to the task
-    const result = await clickUpServices.tag.addTagToTask(taskIdResult.taskId, tagName);
+    const result = await tagService.addTagToTask(taskIdResult.taskId, tagName);
     
     if (!result.success) {
       logger.error('Failed to add tag to task', result.error);
@@ -915,13 +878,14 @@ export async function addTagToTask(params: {
  * @param params - Task identifier and tag name
  * @returns Success status
  */
-export async function removeTagFromTask(params: {
+export async function removeTagFromTask(services: ClickUpServices, params: {
   taskId?: string;
   customTaskId?: string;
   taskName?: string;
   listName?: string;
   tagName: string;
 }) {
+  const { tag: tagService } = services;
   const { taskId, customTaskId, taskName, listName, tagName } = params;
   
   if (!tagName) {
@@ -948,7 +912,7 @@ export async function removeTagFromTask(params: {
   
   try {
     // Resolve the task ID
-    const taskIdResult = await resolveTaskId({ taskId, customTaskId, taskName, listName });
+    const taskIdResult = await resolveTaskId(services, { taskId, customTaskId, taskName, listName });
     
     if (!taskIdResult.success) {
       return {
@@ -958,7 +922,7 @@ export async function removeTagFromTask(params: {
     }
     
     // Remove tag from the task
-    const result = await clickUpServices.tag.removeTagFromTask(taskIdResult.taskId, tagName);
+    const result = await tagService.removeTagFromTask(taskIdResult.taskId, tagName);
     
     if (!result.success) {
       logger.error('Failed to remove tag from task', result.error);
@@ -986,4 +950,4 @@ export async function removeTagFromTask(params: {
       }
     };
   }
-} 
+}

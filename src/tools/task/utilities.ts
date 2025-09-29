@@ -13,13 +13,10 @@ import {
 } from '../../services/clickup/types.js';
 import { BatchProcessingOptions } from '../../utils/concurrency-utils.js';
 import { formatDueDate } from '../utils.js';
-import { clickUpServices } from '../../services/shared.js';
 import { findListIDByName } from '../../tools/list.js';
 import { WorkspaceService } from '../../services/clickup/workspace.js';
 import { TaskPriority } from '../../services/clickup/types.js';
-
-// Use shared services instance for ID resolution
-const { workspace: workspaceService, task: taskService } = clickUpServices;
+import { ClickUpServices } from '../../services/clickup/index.js';
 
 //=============================================================================
 // DATA FORMATTING UTILITIES
@@ -309,7 +306,7 @@ export function parseBulkOptions(rawOptions: any): BatchProcessingOptions | unde
  * Resolves a list ID from either direct ID or name
  * Handles validation and throws appropriate errors
  */
-export async function resolveListIdWithValidation(listId?: string, listName?: string): Promise<string> {
+export async function resolveListIdWithValidation(services: ClickUpServices, listId?: string, listName?: string): Promise<string> {
   // Validate parameters
   validateListIdentification(listId, listName);
   
@@ -317,7 +314,7 @@ export async function resolveListIdWithValidation(listId?: string, listName?: st
   if (listId) return listId;
   
   // At this point we know we have listName (validation ensures this)
-  const listInfo = await findListIDByName(workspaceService, listName!);
+  const listInfo = await findListIDByName(services, listName!);
   
   if (!listInfo) {
     throw new Error(`List "${listName}" not found`);
@@ -368,12 +365,14 @@ export function extractTreePath(root: any, targetId: string): any[] {
  * Get task ID from various identification methods
  */
 export async function getTaskId(
+  services: ClickUpServices,
   taskId?: string,
   taskName?: string,
   listName?: string,
   customTaskId?: string,
   requireId = false
 ): Promise<string> {
+  const { task: taskService } = services;
   // Validate task identification
   const validationResult = validateTaskIdentification(
     { taskId, taskName, listName, customTaskId },
@@ -406,4 +405,4 @@ export async function getTaskId(
     }
     throw error;
   }
-} 
+}

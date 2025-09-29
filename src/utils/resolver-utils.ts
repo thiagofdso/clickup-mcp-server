@@ -7,7 +7,7 @@
  * This module provides utilities for resolving entity IDs from names or other identifiers.
  */
 
-import { clickUpServices } from '../services/shared.js';
+import { ClickUpServices } from '../services/clickup/index.js';
 import { findListIDByName } from '../tools/list.js';
 
 /**
@@ -146,9 +146,9 @@ export function isNameMatch(actualName: string, searchName: string): NameMatchRe
  * Resolve a list ID from either a direct ID or list name
  */
 export async function resolveListId(
+  services: ClickUpServices,
   listId?: string,
   listName?: string,
-  workspaceService = clickUpServices.workspace
 ): Promise<string> {
   // If list ID is directly provided, use it
   if (listId) {
@@ -157,7 +157,7 @@ export async function resolveListId(
   
   // If list name is provided, find the corresponding ID
   if (listName) {
-    const listInfo = await findListIDByName(workspaceService, listName);
+    const listInfo = await findListIDByName(services, listName);
     if (!listInfo) {
       throw new Error(`List "${listName}" not found`);
     }
@@ -166,4 +166,4 @@ export async function resolveListId(
   
   // If neither is provided, throw an error
   throw new Error("Either listId or listName must be provided");
-} 
+}

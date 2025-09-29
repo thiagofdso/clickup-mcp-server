@@ -12,7 +12,7 @@
  * - Delete a time entry
  */
 
-import { timeTrackingService } from "../../services/shared.js";
+import { ClickUpServices } from "../../services/clickup/index.js";
 import { getTaskId } from "./utilities.js";
 import { Logger } from "../../logger.js";
 import { ErrorCode } from "../../services/clickup/base.js";
@@ -201,12 +201,13 @@ export const getCurrentTimeEntryTool = {
 /**
  * Handle get task time entries tool
  */
-export async function handleGetTaskTimeEntries(params: any) {
+export async function handleGetTaskTimeEntries(services: ClickUpServices, params: any) {
+  const { timeTracking: timeTrackingService } = services;
   logger.info("Handling request to get task time entries", params);
 
   try {
     // Resolve task ID
-    const taskId = await getTaskId(params.taskId, params.taskName, params.listName);
+    const taskId = await getTaskId(services, params.taskId, params.taskName, params.listName);
     if (!taskId) {
       return sponsorService.createErrorResponse("Task not found. Please provide a valid taskId or taskName + listName combination.");
     }
@@ -265,12 +266,13 @@ export async function handleGetTaskTimeEntries(params: any) {
 /**
  * Handle start time tracking tool
  */
-export async function handleStartTimeTracking(params: any) {
+export async function handleStartTimeTracking(services: ClickUpServices, params: any) {
+  const { timeTracking: timeTrackingService } = services;
   logger.info("Handling request to start time tracking", params);
 
   try {
     // Resolve task ID
-    const taskId = await getTaskId(params.taskId, params.taskName, params.listName);
+    const taskId = await getTaskId(services, params.taskId, params.taskName, params.listName);
     if (!taskId) {
       return sponsorService.createErrorResponse("Task not found. Please provide a valid taskId or taskName + listName combination.");
     }
@@ -337,7 +339,8 @@ export async function handleStartTimeTracking(params: any) {
 /**
  * Handle stop time tracking tool
  */
-export async function handleStopTimeTracking(params: any) {
+export async function handleStopTimeTracking(services: ClickUpServices, params: any) {
+  const { timeTracking: timeTrackingService } = services;
   logger.info("Handling request to stop time tracking", params);
 
   try {
@@ -393,12 +396,13 @@ export async function handleStopTimeTracking(params: any) {
 /**
  * Handle add time entry tool
  */
-export async function handleAddTimeEntry(params: any) {
+export async function handleAddTimeEntry(services: ClickUpServices, params: any) {
+  const { timeTracking: timeTrackingService } = services;
   logger.info("Handling request to add time entry", params);
 
   try {
     // Resolve task ID
-    const taskId = await getTaskId(params.taskId, params.taskName, params.listName);
+    const taskId = await getTaskId(services, params.taskId, params.taskName, params.listName);
     if (!taskId) {
       return sponsorService.createErrorResponse("Task not found. Please provide a valid taskId or taskName + listName combination.");
     }
@@ -465,7 +469,8 @@ export async function handleAddTimeEntry(params: any) {
 /**
  * Handle delete time entry tool
  */
-export async function handleDeleteTimeEntry(params: any) {
+export async function handleDeleteTimeEntry(services: ClickUpServices, params: any) {
+  const { timeTracking: timeTrackingService } = services;
   logger.info("Handling request to delete time entry", params);
 
   try {
@@ -496,7 +501,8 @@ export async function handleDeleteTimeEntry(params: any) {
 /**
  * Handle get current time entry tool
  */
-export async function handleGetCurrentTimeEntry(params?: any) {
+export async function handleGetCurrentTimeEntry(services: ClickUpServices, params?: any) {
+  const { timeTracking: timeTrackingService } = services;
   logger.info("Handling request to get current time entry");
 
   try {

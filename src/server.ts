@@ -12,7 +12,7 @@ import {
   GetPromptRequestSchema,
   ListResourcesRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { createClickUpServices } from "./services/clickup/index.js";
+import { createClickUpServices, ClickUpServices } from "./services/clickup/index.js";
 import config from "./config.js";
 import { workspaceHierarchyTool, handleGetWorkspaceHierarchy } from "./tools/workspace.js";
 import {
@@ -97,9 +97,6 @@ import { clickUpServices } from "./services/shared.js";
 
 // Create a logger instance for server
 const logger = new Logger('Server');
-
-// Use existing services from shared module instead of creating new ones
-const { workspace } = clickUpServices;
 
 /**
  * Determines if a tool should be enabled based on ENABLED_TOOLS and DISABLED_TOOLS configuration.
@@ -222,7 +219,26 @@ export function configureServer() {
   });
 
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
-    const { name, arguments: params } = req.params;
+    const { name, arguments: params, _meta } = req.params;
+    let servicesForRequest: ClickUpServices;
+
+    if (config.headerAuthentication) {
+      // Header-based authentication
+      const { apiKey, teamId } = _meta || {};
+
+      if (!apiKey || !teamId) {
+        throw new Error('Missing X-ClickUp-API-Key or X-ClickUp-Team-ID header');
+      }
+
+      servicesForRequest = createClickUpServices({
+        apiKey: apiKey as string,
+        teamId: teamId as string,
+      });
+    } else {
+      // Global authentication
+      servicesForRequest = clickUpServices;
+    }
+
 
     // Improved logging with more context
     logger.info(`Received CallTool request for tool: ${name}`, {
@@ -245,91 +261,91 @@ export function configureServer() {
       // Handle tool calls by routing to the appropriate handler
       switch (name) {
         case "get_workspace_hierarchy":
-          return handleGetWorkspaceHierarchy();
+          return handleGetWorkspaceHierarchy(servicesForRequest);
         case "create_task":
-          return handleCreateTask(params);
+          return handleCreateTask(servicesForRequest, params);
         case "update_task":
-          return handleUpdateTask(params);
+          return handleUpdateTask(servicesForRequest, params);
         case "move_task":
-          return handleMoveTask(params);
+          return handleMoveTask(servicesForRequest, params);
         case "duplicate_task":
-          return handleDuplicateTask(params);
+          return handleDuplicateTask(servicesForRequest, params);
         case "get_task":
-          return handleGetTask(params);
+          return handleGetTask(servicesForRequest, params);
         case "delete_task":
-          return handleDeleteTask(params);
+          return handleDeleteTask(servicesForRequest, params);
         case "get_task_comments":
-          return handleGetTaskComments(params);
+          return handleGetTaskComments(servicesForRequest, params);
         case "create_task_comment":
-          return handleCreateTaskComment(params);
+          return handleCreateTaskComment(servicesForRequest, params);
         case "attach_task_file":
-          return handleAttachTaskFile(params);
+          return handleAttachTaskFile(servicesForRequest, params);
         case "create_bulk_tasks":
-          return handleCreateBulkTasks(params);
+          return handleCreateBulkTasks(servicesForRequest, params);
         case "update_bulk_tasks":
-          return handleUpdateBulkTasks(params);
+          return handleUpdateBulkTasks(servicesForRequest, params);
         case "move_bulk_tasks":
-          return handleMoveBulkTasks(params);
+          return handleMoveBulkTasks(servicesForRequest, params);
         case "delete_bulk_tasks":
-          return handleDeleteBulkTasks(params);
+          return handleDeleteBulkTasks(servicesForRequest, params);
         case "get_workspace_tasks":
-          return handleGetWorkspaceTasks(params);
+          return handleGetWorkspaceTasks(servicesForRequest, params);
         case "create_list":
-          return handleCreateList(params);
+          return handleCreateList(servicesForRequest, params);
         case "create_list_in_folder":
-          return handleCreateListInFolder(params);
+          return handleCreateListInFolder(servicesForRequest, params);
         case "get_list":
-          return handleGetList(params);
+          return handleGetList(servicesForRequest, params);
         case "update_list":
-          return handleUpdateList(params);
+          return handleUpdateList(servicesForRequest, params);
         case "delete_list":
-          return handleDeleteList(params);
+          return handleDeleteList(servicesForRequest, params);
         case "create_folder":
-          return handleCreateFolder(params);
+          return handleCreateFolder(servicesForRequest, params);
         case "get_folder":
-          return handleGetFolder(params);
+          return handleGetFolder(servicesForRequest, params);
         case "update_folder":
-          return handleUpdateFolder(params);
+          return handleUpdateFolder(servicesForRequest, params);
         case "delete_folder":
-          return handleDeleteFolder(params);
+          return handleDeleteFolder(servicesForRequest, params);
         case "get_space_tags":
-          return handleGetSpaceTags(params);
+          return handleGetSpaceTags(servicesForRequest, params);
         case "add_tag_to_task":
-          return handleAddTagToTask(params);
+          return handleAddTagToTask(servicesForRequest, params);
         case "remove_tag_from_task":
-          return handleRemoveTagFromTask(params);
+          return handleRemoveTagFromTask(servicesForRequest, params);
         case "get_task_time_entries":
-          return handleGetTaskTimeEntries(params);
+          return handleGetTaskTimeEntries(servicesForRequest, params);
         case "start_time_tracking":
-          return handleStartTimeTracking(params);
+          return handleStartTimeTracking(servicesForRequest, params);
         case "stop_time_tracking":
-          return handleStopTimeTracking(params);
+          return handleStopTimeTracking(servicesForRequest, params);
         case "add_time_entry":
-          return handleAddTimeEntry(params);
+          return handleAddTimeEntry(servicesForRequest, params);
         case "delete_time_entry":
-          return handleDeleteTimeEntry(params);
+          return handleDeleteTimeEntry(servicesForRequest, params);
         case "get_current_time_entry":
-          return handleGetCurrentTimeEntry(params);
+          return handleGetCurrentTimeEntry(servicesForRequest, params);
         case "create_document":
-          return handleCreateDocument(params);
+          return handleCreateDocument(servicesForRequest, params);
         case "get_document":
-          return handleGetDocument(params);
+          return handleGetDocument(servicesForRequest, params);
         case "list_documents":
-          return handleListDocuments(params);
+          return handleListDocuments(servicesForRequest, params);
         case "list_document_pages":
-          return handleListDocumentPages(params);
+          return handleListDocumentPages(servicesForRequest, params);
         case "get_document_pages":
-          return handleGetDocumentPages(params);
+          return handleGetDocumentPages(servicesForRequest, params);
         case "create_document_page":
-          return handleCreateDocumentPage(params);
+          return handleCreateDocumentPage(servicesForRequest, params);
         case "update_document_page":
-          return handleUpdateDocumentPage(params);
+          return handleUpdateDocumentPage(servicesForRequest, params);
         case "get_workspace_members":
-          return handleGetWorkspaceMembers();
+          return handleGetWorkspaceMembers(servicesForRequest);
         case "find_member_by_name":
-          return handleFindMemberByName(params);
+          return handleFindMemberByName(servicesForRequest, params);
         case "resolve_assignees":
-          return handleResolveAssignees(params);
+          return handleResolveAssignees(servicesForRequest, params);
         default:
           logger.error(`Unknown tool requested: ${name}`);
           const error = new Error(`Unknown tool: ${name}`);
@@ -372,8 +388,3 @@ export function configureServer() {
 
   return server;
 }
-
-/**
- * Export the clickup service for use in tool handlers
- */
-export { workspace };

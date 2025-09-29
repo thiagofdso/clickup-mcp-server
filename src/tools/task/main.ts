@@ -9,6 +9,7 @@
  */
 
 import { sponsorService } from '../../utils/sponsor-service.js';
+import { ClickUpServices } from '../../services/clickup/index.js';
 
 // Import tool definitions
 import {
@@ -34,16 +35,6 @@ import {
   getWorkspaceTasksTool
 } from './workspace-operations.js';
 
-// Add this to your import statements at the top of the file
-import {
-  getWorkspaceMembersTool,
-  findMemberByNameTool,
-  resolveAssigneesTool,
-  handleGetWorkspaceMembers,
-  handleFindMemberByName,
-  handleResolveAssignees
-} from '../member.js';  // Adjust the path as needed - it should point to where member.ts is located
-
 // Import handlers
 import {
   createTaskHandler,
@@ -60,12 +51,8 @@ import {
   moveBulkTasksHandler,
   deleteBulkTasksHandler,
   getWorkspaceTasksHandler,
-  formatTaskData
-} from './index.js';
-
-// Import shared services
-import { clickUpServices } from '../../services/shared.js';
-const { task: taskService } = clickUpServices;
+} from './handlers.js';
+import { formatTaskData } from './utilities.js';
 
 import { BatchResult } from '../../utils/concurrency-utils.js';
 import { ClickUpTask } from '../../services/clickup/types.js';
@@ -78,12 +65,12 @@ import { ClickUpTask } from '../../services/clickup/types.js';
  * Creates a wrapped handler function with standard error handling and response formatting
  */
 function createHandlerWrapper<T>(
-  handler: (params: any) => Promise<T>,
+  handler: (services: ClickUpServices, params: any) => Promise<T>,
   formatResponse: (result: T) => any = (result) => result
 ) {
-  return async (parameters: any) => {
+  return async (services: ClickUpServices, parameters: any) => {
     try {
-      const result = await handler(parameters);
+      const result = await handler(services, parameters);
       return sponsorService.createResponse(formatResponse(result), true);
     } catch (error) {
       return sponsorService.createErrorResponse(error, parameters);
@@ -102,17 +89,7 @@ export const handleGetTasks = createHandlerWrapper(getTasksHandler, (tasks) => (
   count: tasks.length
 }));
 
-/**
- * Handle task update operation
- */
-export async function handleUpdateTask(parameters: any) {
-  try {
-    const result = await updateTaskHandler(taskService, parameters);
-    return sponsorService.createResponse(formatTaskData(result), true);
-  } catch (error) {
-    return sponsorService.createErrorResponse(error instanceof Error ? error.message : String(error));
-  }
-}
+export const handleUpdateTask = createHandlerWrapper(updateTaskHandler, formatTaskData);
 
 export const handleMoveTask = createHandlerWrapper(moveTaskHandler);
 export const handleDuplicateTask = createHandlerWrapper(duplicateTaskHandler);
@@ -178,123 +155,6 @@ export const handleDeleteBulkTasks = createHandlerWrapper(deleteBulkTasksHandler
 //=============================================================================
 
 export const handleGetWorkspaceTasks = createHandlerWrapper(
-  // This adapts the new handler signature to match what createHandlerWrapper expects
-  (params) => getWorkspaceTasksHandler(taskService, params),
+  getWorkspaceTasksHandler,
   (response) => response // Pass through the response as is
 );
-
-//=============================================================================
-// TOOL DEFINITIONS AND HANDLERS EXPORT
-//=============================================================================
-
-// Tool definitions with their handler mappings
-export const tools = [
-  { 
-    definition: createTaskTool, 
-    handler: createTaskHandler
-  },
-  { 
-    definition: updateTaskTool, 
-    handler: updateTaskHandler
-  },
-  { 
-    definition: moveTaskTool, 
-    handler: moveTaskHandler
-  },
-  { 
-    definition: duplicateTaskTool, 
-    handler: duplicateTaskHandler
-  },
-  { 
-    definition: getTaskTool, 
-    handler: getTaskHandler
-  },
-  { 
-    definition: getTasksTool, 
-    handler: getTasksHandler
-  },
-  { 
-    definition: getTaskCommentsTool, 
-    handler: getTaskCommentsHandler
-  },
-  { 
-    definition: createTaskCommentTool, 
-    handler: createTaskCommentHandler
-  },
-  { 
-    definition: deleteTaskTool, 
-    handler: deleteTaskHandler
-  },
-  { 
-    definition: getWorkspaceTasksTool, 
-    handler: getWorkspaceTasksHandler
-  },
-  { 
-    definition: createBulkTasksTool, 
-    handler: async (params: any) => {
-      const result = await createBulkTasksHandler(params) as BatchResult<ClickUpTask>;
-      return {
-        successful: result.successful,
-        failed: result.failed,
-        count: result.totals.total,
-        success_count: result.totals.success,
-        failure_count: result.totals.failure,
-        errors: result.failed.map(f => f.error)
-      };
-    }
-  },
-  { 
-    definition: updateBulkTasksTool, 
-    handler: async (params: any) => {
-      const result = await updateBulkTasksHandler(params) as BatchResult<ClickUpTask>;
-      return {
-        successful: result.successful,
-        failed: result.failed,
-        count: result.totals.total,
-        success_count: result.totals.success,
-        failure_count: result.totals.failure,
-        errors: result.failed.map(f => f.error)
-      };
-    }
-  },
-  { 
-    definition: moveBulkTasksTool, 
-    handler: async (params: any) => {
-      const result = await moveBulkTasksHandler(params) as BatchResult<ClickUpTask>;
-      return {
-        successful: result.successful,
-        failed: result.failed,
-        count: result.totals.total,
-        success_count: result.totals.success,
-        failure_count: result.totals.failure,
-        errors: result.failed.map(f => f.error)
-      };
-    }
-  },
-  { 
-    definition: deleteBulkTasksTool, 
-    handler: async (params: any) => {
-      const result = await deleteBulkTasksHandler(params) as BatchResult<void>;
-      return {
-        successful: result.successful,
-        failed: result.failed,
-        count: result.totals.total,
-        success_count: result.totals.success,
-        failure_count: result.totals.failure,
-        errors: result.failed.map(f => f.error)
-      };
-    }
-  },
-   {
-    definition: getWorkspaceMembersTool,
-    handler: handleGetWorkspaceMembers
-  },
-  {
-    definition: findMemberByNameTool,
-    handler: handleFindMemberByName
-  },
-  {
-    definition: resolveAssigneesTool,
-    handler: handleResolveAssignees
-  }
-];
