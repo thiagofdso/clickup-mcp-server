@@ -151,6 +151,22 @@ export class BaseClickUpService {
 
     this.logger.debug(`Initialized ${className}`, { teamId, baseUrl });
 
+    // Add request interceptor to log headers
+    this.client.interceptors.request.use(
+      config => {
+        this.logger.debug(`Requesting ${config.method?.toUpperCase()} ${config.url}`, {
+          headers: config.headers,
+          params: config.params,
+          data: config.data
+        });
+        return config;
+      },
+      error => {
+        this.logger.error('Request Interceptor Error', error);
+        return Promise.reject(error);
+      }
+    );
+
     // Add response interceptor for error handling
     this.client.interceptors.response.use(
       response => response,

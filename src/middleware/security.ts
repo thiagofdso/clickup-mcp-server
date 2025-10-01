@@ -198,6 +198,7 @@ export function createSecurityLoggingMiddleware() {
     }
 
     const startTime = Date.now();
+    logger.debug('Request Headers:', req.headers);
     
     res.on('finish', () => {
       const duration = Date.now() - startTime;
