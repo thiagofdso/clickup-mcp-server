@@ -1,0 +1,101 @@
+curl -v -k -H "Authorization: pk_81476929_607R1L926TFRSFMPNS8QX9REFKB3CDNS" "https://api.clickup.com/api/v2/team/9011970959"
+* Uses proxy env variable no_proxy == '.desenv.com,.banpara.com,localhost,10.0.25.54'
+* Uses proxy env variable https_proxy == 'http://servicelinux:Ab123456@10.0.1.186:8080'
+*   Trying 10.0.1.186:8080...
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{"team":{"id":"9011970959","name":"DITEC","color":"#40BC86","avatar":"https://attachments2.clickup.com/team_avatars/9011970959_LMm.blob?Expires=1774915200&Key-Pair-Id=APKAIYJRUKB5RLQWHZWQ&Signature=FgruBlbgrznAWjZiR7CUEQhLIt5drcxliP12slLsHbH7qFu08wvwfaSUiIflwy1DBCYdjgvsfsizhC5efrhJT7OT6Or54sqTdMiFHJqj4SiFFmEeZazdJ7UuCz05tI4-ngvM60QstRRYRsw6JkJG5FGMO5OBSiEWWa04D9YAViY7mOrU9W0l9UtUVbprF5kFNwStFJUSe0BLP7VxyKEhi5nPkq~ertPXBP0BqT8Geo1TY453QY0-CTlPTdFO0AOiivD-yLfMEpYJZqijrWqzA5-S0SABrdNeDdOF0rCuTXW5vwubPm~MbkimWuI2nrXO9Me1KLzWTeATyiEkFe5ZKw__","members":[{"user":{"id":230653792,"username":"Jorge Santos da Cruz Junior","email":"jcjunior@banparanet.com.br","color":null,"profilePicture":null,"initials":"JJ","role":3,"role_subtype":0,"role_key":"member","custom_role":null,"date_joined":"1757353917008","date_invited":"1757351979723"},"invited_by":{"id":84047776,"username":"Diego Noura de Brito","color":"","email":"dbrito@banparanet.com.br","initials":"DB","profilePicture":null,"banned_date":null,"status":"active"}},{"user":{"id":81587139,"username":"Jenkins Banpará","email":"gekexor137@calorpg.com","color":"#b388ff","profilePicture":null,"initials":"JB","role":4,"role_subtype":4,"role_key":"limited_member","custom_role":null,"date_joined":"1750246444733","date_invited":"1750246213284"},"invited_by":{"id":84047776,"username":"Diego Noura de Brito","color":"","email":"dbrito@banparanet.com.br","initials":"DB","profilePicture":null,"banned_date":null,"status":"active"},"can_see_time_spent":true,"can_see_time_estimated":true,"can_see_points_estimated":true,"can_edit_tags":true,"can_create_views":true},{"user":{"id":81571553,"username":"Dulcylene Assuncao","email":"dassuncao@banparanet.com.br","color":"#006063","profilePicture":null,"initials":"DA","role":3,"role_subtype":0,"role_key":"member","custom_role":null,"date_joined":"1758027912864","date_invited":"1747924533661"},"invited_by":{"id":84047776,"username":"Diego Noura de Brito","color":"","email":"dbrito@banparanet.com.br","initials":"DB","profilePicture":null,"banned_date":null,"status":"active"}},{"user":{"id":81571552,"username":"Carlos Takeshi Kudo Yasojima","email":"cyasojima@banparanet.com.br","color":"#5f7c8a","profilePicture":null,"initials":"CY","role":3,"role_subtype":0,"role_key":"member","custom_role":null,"date_joined":"1747936251303","date_invited":"1747924528619"},"invited_by":{"id":84047776,"username":"Diego Noura de Brito","color":"","email":"dbrito@banparanet.com.br","initials":"DB","profilePicture":null,"banned_date":null,"status":"active"}},{"user":{"id":81571551,"username":"Juliane Freitas de Souza","email":"jfsouza@banparanet.com.br","color":"#0197a7","profilePicture":null,"initials":"JS","role":3,"role_subtype":0,"role_key":"member","custom_role":null,"date_joined":"1747927929948","date_invited":"1747924509474"},"invited_by":{"id":84047776,"username":"Diego Noura de Brito","color":"","email":"dbrito@banparanet.com.br","initials":"DB","profilePicture":null,"banned_date":null,"status":"active"}},{"user":{"id":194603692,"username":"Thiago Freitas Moraes","email":"tmoraes@banparanet.com.br","color":"","profilePicture":null,"initials":"TM","role":3,"role_subtype":0,"role_key":"member","custom_role":null,"date_joined":"1747750146637","date_invited":"1747750005711"},"invited_by":{"id":84047776,"username":"Diego Noura de Brito","color":"","email":"dbrito@banparanet.com.br","initials":"DB","profilePicture":null,"banned_date":null,"status":"active"}},{"user":{"id":81565248,"username":"Leonardo Torres Kawaguchi","email":"lkawaguchi@banparanet.com.br","color":"#ff5251","profilePicture":null,"initials":"LK","role":3,"role_subtype":0,"role_key":"member","custom_role":null,"date_joined":"1747074046766","date_invited":"1747054213579"},"invited_by":{"id":84047776,"username":"Diego Noura de Brito","color":"","email":"dbrito@banparanet.com.br","initials":"DB","profilePicture":null,"banned_date":null,"status":"active"}},{"user":{"id":87907387,"username":"Bruno Bitar Morhy","email":"bmorhy@banparanet.com.br","color":"#e16b16","profilePicture":null,"initials":"BM","role":4,"role_subtype":4,"role_key":"limited_member","custom_role":null,"date_joined":"1740419907630","date_invited":"1740150604370"},"invited_by":{"id":84047776,"username":"Diego Noura de Brito","color":"","email":"dbrito@banparanet.com.br","initials":"DB","profilePicture":null,"banned_date":null,"status":"active"},"can_see_time_spent":true,"can_see_time_estimated":true,"can_see_points_estimated":true,"can_edit_tags":false,"can_create_views":false},{"user":{"id":81511149,"username":"Filipe César Sucupira Maciel","email":"filipesucupira@gmail.com","color":"#000","profilePicture":"https://attachments.clickup.com/profilePictures/81511149_ZIA.jpg","initials":"FM","role":4,"role_subtype":4,"role_key":"limited_member","custom_role":null,"date_joined":"1740072736374","date_invited":"1739999727571"},"invited_by":{"id":84047776,"username":"Diego Noura de Brito","color":"","email":"dbrito@banparanet.com.br","initials":"DB","profilePicture":null,"banned_date":null,"status":"active"},"can_see_time_spent":true,"can_see_time_estimated":true,"can_see_points_estimated":true,"can_edit_tags":false,"can_create_views":false},{"user":{"id":81483134,"username":"Michel Rocha Jaime","email":"mjaime@banparanet.com.br","color":"#d60800","profilePicture":null,"initials":"MJ","role":3,"role_subtype":0,"role_key":"member","custom_role":null,"date_joined":"1737990941494","date_invited":"1737990727814"},"invited_by":{"id":84047776,"username":"Diego Noura de Brito","color":"","email":"dbrito@banparanet.com.br","initials":"DB","profilePicture":null,"banned_date":null,"status":"active"}},{"user":{"id":81483133,"username":"Mário Augusto Fonseca Gomes","email":"magomes@banparanet.com.br","color":"#3e63dd","profilePicture":null,"initials":"MG","role":3,"role_subtype":0,"role_key":"member","custom_role":null,"date_joined":"1738067605112","date_invited":"1737990717963"},"invited_by":{"id":84047776,"username":"Diego Noura de Brito","color":"","email":"dbrito@banparanet.com.br","initials":"DB","profilePicture":null,"banned_date":null,"status":"active"}},{"user":{"id":81479429,"username":"Gabriel de Sousa Araujo","email":"gsaraujo@banparanet.com.br","color":"#5d4037","profilePicture":null,"initials":"GA","role":3,"role_subtype":0,"role_key":"member","custom_role":null,"date_joined":"1737645284313","date_invited":"1737638252116"},"invited_by":{"id":84047776,"username":"Diego Noura de Brito","color":"","email":"dbrito@banparanet.com.br","initials":"DB","profilePicture":null,"banned_date":null,"status":"active"}},{"user":{"id":81477725,"username":"Leonardo Sarraff Nunes de Moraes","email":"lsmoraes@banparanet.com.br","color":"#1b5e20","profilePicture":null,"initials":"LM","role":3,"role_subtype":0,"role_key":"member","custom_role":null,"date_joined":"1737651823022","date_invited":"1737566582026"},"invited_by":{"id":84047776,"username":"Diego Noura de Brito","color":"","email":"dbrito@banparanet.com.br","initials":"DB","profilePicture":null,"banned_date":null,"status":"active"}},{"user":{"id":81476929,"username":"Thiago Fernandes da Silva Oliveira","email":"tfoliveira@banparanet.com.br","color":"#e16b16","profilePicture":null,"initials":"TO","role":3,"role_subtype":0,"role_key":"member","custom_role":null,"date_joined":"1737552930170","date_invited":"1737550279366"},"invited_by":{"id":84047776,"username":"Diego Noura de Brito","color":"","email":"dbrito@banparanet.com.br","initials":"DB","profilePicture":null,"banned_date":null,"status":"active"}},{"user":{"id":81476912,"username":"Arilton Tadeu dos Santos Amaral","email":"atamaral@banparanet.com.br","color":"#e5484d","profilePicture":"https://attachments.clickup.com/profilePictures/81476912_RSn.jpg","initials":"AA","role":3,"role_subtype":0,"role_key":"member","custom_role":null,"date_joined":"1737551140566","date_invited":"1737549881852"},"invited_by":{"id":84047781,"username":"Diego Brito","color":"","email":"diego.nobri@gmail.com","initials":"DB","profilePicture":null,"banned_date":null,"status":"active"}},{"user":{"id":84047776,"username":"Diego Noura de Brito","email":"dbrito@banparanet.com.br","color":"","profilePictur* Connected to 10.0.1.186 (10.0.1.186) port 8080 (#0)
+* allocate connect buffer!
+* Establish HTTP proxy tunnel to api.clickup.com:443
+* Proxy auth using Basic with user 'servicelinux'
+> CONNECT api.clickup.com:443 HTTP/1.1
+> Host: api.clickup.com:443
+> Proxy-Authorization: Basic c2VydmljZWxpbnV4OkFiMTIzNDU2
+> User-Agent: curl/7.81.0
+> Proxy-Connection: Keep-Alive
+>
+< HTTP/1.1 200 Connection established
+< Proxy-Agent: Fortinet-Proxy/1.0
+<
+* Proxy replied 200 to CONNECT request
+* CONNECT phase completed!
+* ALPN, offering h2
+* ALPN, offering http/1.1
+} [5 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+} [512 bytes data]
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+{ [122 bytes data]
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+{ [19 bytes data]
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+{ [2832 bytes data]
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+{ [78 bytes data]
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+{ [36 bytes data]
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+} [1 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+} [36 bytes data]
+* SSL connection using TLSv1.3 / TLS_AES_128_GCM_SHA256
+* ALPN, server accepted to use h2
+* Server certificate:
+*  subject: CN=clickup.com
+*  start date: Jul 10 00:00:00 2025 GMT
+*  expire date: Aug  8 23:59:59 2026 GMT
+*  issuer: C=US; O=Amazon; CN=Amazon ECDSA 256 M03
+*  SSL certificate verify result: unable to get local issuer certificate (20), continuing anyway.
+* Using HTTP2, server supports multiplexing
+* Connection state changed (HTTP/2 confirmed)
+* Copying HTTP/2 data in stream buffer to connection buffer after upgrade: len=0
+} [5 bytes data]
+* Using Stream ID: 1 (easy handle 0x24255d41f30)
+} [5 bytes data]
+> GET /api/v2/team/9011970959 HTTP/2
+> Host: api.clickup.com
+> user-agent: curl/7.81.0
+> accept: */*
+> authorization: pk_81476929_607R1L926TFRSFMPNS8QX9REFKB3CDNS
+>
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+{ [157 bytes data]
+* Connection state changed (MAX_CONCURRENT_STREAMS == 128)!
+} [5 bytes data]
+< HTTP/2 200
+< content-type: application/json; charset=utf-8
+< content-length: 8684
+< date: Thu, 02 Oct 2025 12:19:00 GMT
+< x-received-from: shard-prod-us-west-2-2
+< server: nginx
+< x-dns-prefetch-control: off
+< expect-ct: max-age=0
+< strict-transport-security: max-age=31536000; includeSubDomains
+< x-download-options: noopen
+< x-content-type-options: nosniff
+< x-permitted-cross-domain-policies: none
+< x-xss-protection: 0
+< access-control-allow-origin: *
+< access-control-allow-credentials: true
+< access-control-expose-headers: x-datadog-trace-id,server
+< content-language: en-US
+< x-datadog-trace-id: 1618868353049671610
+< content-security-policy: frame-ancestors 'self'
+< cache-control: no-cache, no-store
+< pragma: no-cache
+< expires: 0
+< x-ratelimit-limit: 100
+< x-ratelimit-remaining: 98
+< x-ratelimit-reset: 1759407591
+< timing-allow-origin: *
+< x-cache: Miss from cloudfront
+< via: 1.1 0f61fb3574e7a123c77d9786f3283846.cloudfront.net (CloudFront)
+< x-amz-cf-pop: FOR50-P5
+< alt-svc: h3=":443"; ma=86400
+< x-amz-cf-id: DrZppvD7ttqnz5Gzg7ZP30AXKSbPXkYdh2FAWJPoh3egb1X62s_4DA==
+< server-timing: cdn-upstream-layer;desc="EDGE",cdn-upstream-dns;dur=0,cdn-upstream-connect;dur=0,cdn-upstream-fbl;dur=473,cdn-cache-miss,cdn-pop;desc="FOR50-P5",cdn-rid;desc="DrZppvD7ttqnz5Gzg7ZP30AXKSbPXkYdh2FAWJPoh3egb1X62s_4DA==",cdn-downstream-fbl;dur=476
+<
+{ [8684 bytes data]
+100  8684  100  8684    0     0  14635      0 --:--:-- --:--:-- --:--:-- 14743e":null,"initials":"DB","role":1,"role_subtype":0,"role_key":"owner","custom_role":null,"date_joined":"1737550151498","date_invited":"1737549865209"},"invited_by":{"id":84047781,"username":"Diego Brito","color":"","email":"diego.nobri@gmail.com","initials":"DB","profilePicture":null,"banned_date":null,"status":"active"}}],"roles":[{"id":1,"name":"owner","custom":false},{"id":2,"name":"admin","custom":false},{"id":3,"name":"member","custom":false},{"id":4,"name":"guest","custom":false}]}}
+* Connection #0 to host 10.0.1.186 left intact
