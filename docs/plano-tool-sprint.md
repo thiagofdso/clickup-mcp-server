@@ -18,7 +18,7 @@ Criar a tool MCP `get_sprint_tasks` que recebe um `due_date_gt` (obrigatório) e
 ## Fluxo proposto (alto nível)
 1. **Parâmetros & validação**
    - Tool aceita objeto com `due_date_gt` (string `dd/mm/yyyy`). Validar presença e formato.
-   - Converter para timestamp em ms reutilizando `parseDueDate` após suportar o padrão (assumir hora 23:59:59 para incluir todo o dia, ou documentar decisão).
+   - Converter para timestamp em ms reutilizando `parseDueDate` após suportar o padrão, normalizando para o início do dia (00:00).
 2. **Carregar equipe**
    - Chamar `GET /v2/team` (via novo serviço fino) e extrair membros do `teamId` atual.
    - Criar estrutura `Set` com IDs numéricos para filtros e pós-filtragem.
@@ -27,24 +27,24 @@ Criar a tool MCP `get_sprint_tasks` que recebe um `due_date_gt` (obrigatório) e
      - `assignees[]=memberId` para cada integrante;
      - `due_date_gt=timestamp`, `include_closed=true`, `subtasks=true`, `include_markdown_description=true`.
    - Se necessário refinar para subtarefas isoladas, usar o mesmo endpoint com `parent=taskId`.
-   - Deduplicar resultados e garantir via pós-filtragem local (`due_date >= filtro`, interseção de assignees).
+   - Deduplicar resultados e garantir via pós-filtragem local (`due_date >= filtro`, interseção de assignees). Como `assignees[]` aceita múltiplos valores, incluir todos IDs da equipe numa única chamada.
    - Inspirar-se em `getTasks.js` para:
      - construir query params com `URLSearchParams`, preservando Arrays como `key[]`;
      - reconstruir hierarquia pai/filho com `Map` de tarefas por ID antes de aplicar filtros adicionais nas subtarefas.
 4. **Enriquecimento de cada tarefa**
    - O payload já inclui prioridades, markdown, checklists, tags (`openapi.json:19920-20520`). Só complementar se algum campo vier ausente chamando `GET /v2/task/{task_id}?include_subtasks=true&include_markdown_description=true`.
-   - Buscar comentários via `GET /v2/task/{task_id}/comment`, consolidando no resultado.
+   - Buscar comentários via `GET /v2/task/{task_id}/comment`, percorrendo todas as páginas (sem limite) e consolidando no resultado.
 5. **Processar subtarefas**
    - Subtarefas retornadas pelo endpoint principal devem ser filtradas localmente com os mesmos critérios.
    - Para cada subtask válida, repetir coleta de comentários e organizar hierarquia.
 6. **Resposta consolidada**
-   - Estruturar lista final com tarefas e subtarefas aninhadas, incluindo metadados (timestamp aplicado, totais).
+   - Estruturar lista final com tarefas e subtarefas aninhadas, focando nos campos solicitados (prioridade, markdown, checklists, comentários, responsáveis, datas, tags) e metadados (timestamp aplicado, totais).
 
 ## Considerações técnicas
-- **Desempenho & Rate Limits**: Chamar `getTask` e `getTaskComments` por item pode ser custoso. Avaliar lote/concurrency control via `processBatch` (`src/utils/concurrency-utils.ts`) ou similar para limitar chamadas simultâneas.
+- **Desempenho & Rate Limits**: Conduzir chamadas sem throttling explícito; ainda assim monitorar limites da API e adicionar `processBatch` apenas se surgirem erros.
 - **Campos ausentes**: Garantir fallback caso markdown não esteja disponível (usar `description`), listas sem checklists/comentários devem retornar arrays vazias.
 - **Erro de parsing de data**: Propagar mensagem amigável quando `parseDueDate` retornar `undefined`.
-- **Timezones**: Documentar se timestamp considera timezone local ou UTC para evitar divergência no >= (atualmente `parseDueDate` opera no timezone do host).
+- **Timezones**: Destacar em docs que o timestamp resultante representa o início do dia (00:00) no timezone local do servidor.
 
 ## Entregáveis
 1. **Tool definition** (novo arquivo `src/tools/task/sprint-operations.ts` ou semelhante) com schema `{ due_date_gt: string }` e descrição clara.
@@ -59,3 +59,13 @@ Criar a tool MCP `get_sprint_tasks` que recebe um `due_date_gt` (obrigatório) e
 2. Definir contrato de resposta detalhado (campos, estrutura de subtasks).
 3. Mapear comportamento exato do filtro `assignees[]` (por doc ou teste rápido) e ajustar estratégia de busca.
 4. Prototipar função que agrega tarefas detalhadas (pseudo-código) antes de criar tool final.
+
+## Checklist de desenvolvimento
+- [ ] Estender `parseDueDate` para interpretar `dd/mm/yyyy` normalizando para 00:00.
+- [ ] Implementar serviço de membros (`GET /v2/team`) e cache local de IDs.
+- [ ] Criar serviço de tarefas da sprint com `GET /v2/team/{team_Id}/task` aplicando filtros (`due_date_gt`, `assignees[]`, `include_closed`, `subtasks`, `include_markdown_description`).
+- [ ] Implementar reconstrução de hierarquia pai/subtarefa (Map + filtro local).
+- [ ] Integrar coleta de comentários completos (`GET /v2/task/{task_id}/comment` paginado).
+- [ ] Elaborar handler/tool `get_sprint_tasks` com validação de entrada e payload final focado nos campos requeridos.
+- [ ] Adicionar testes cobrindo conversão de data, filtragem de assignees e agregação de subtarefas/comentários (mocks dos serviços).
+- [ ] Documentar nova tool em `docs/` (exemplos de requisição/resposta, observações sobre timezone e filtros).
