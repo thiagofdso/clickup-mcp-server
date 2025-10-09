@@ -223,16 +223,20 @@ export function configureServer() {
     let servicesForRequest: ClickUpServices;
 
     if (config.headerAuthentication) {
-      // Header-based authentication
-      const { apiKey, teamId } = _meta || {};
+      // Header-based authentication for API key only; team ID comes from config
+      const { apiKey } = _meta || {};
 
-      if (!apiKey || !teamId) {
-        throw new Error('Missing X-ClickUp-API-Key or X-ClickUp-Team-ID header');
+      if (!apiKey) {
+        throw new Error('Missing X-ClickUp-API-Key header');
+      }
+
+      if (!config.clickupTeamId) {
+        throw new Error('Missing ClickUp team ID configuration');
       }
 
       servicesForRequest = createClickUpServices({
         apiKey: apiKey as string,
-        teamId: teamId as string,
+        teamId: config.clickupTeamId,
       });
     } else {
       // Global authentication

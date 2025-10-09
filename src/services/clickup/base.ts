@@ -12,7 +12,9 @@
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { Logger, LogLevel } from '../../logger.js';
+import config from '../../config.js';
 
 /**
  * Basic service response interface
@@ -121,19 +123,22 @@ export class BaseClickUpService {
     this.apiKey = apiKey;
     this.teamId = teamId;
     this.requestSpacing = this.defaultRequestSpacing;
+    const proxyUrl = config.proxyAuthentication;
+    const proxyAgent = proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined;
     
     // Create a logger with the actual class name for better context
     const className = this.constructor.name;
     this.logger = new Logger(`ClickUp:${className}`);
 
     // Configure the Axios client with default settings
-    this.client = axios.create({
+    const axiosConfig: AxiosRequestConfig = {
       baseURL: baseUrl,
       headers: {
         'Authorization': apiKey,
         'Content-Type': 'application/json'
       },
       timeout: this.timeout,
+      proxy: false,
       transformResponse: [
         // Add custom response transformer to handle both JSON and text responses
         (data: any) => {
@@ -147,7 +152,13 @@ export class BaseClickUpService {
           return parsed !== null ? parsed : data;
         }
       ]
-    });
+    };
+
+    if (proxyAgent) {
+      axiosConfig.httpsAgent = proxyAgent;
+    }
+
+    this.client = axios.create(axiosConfig);
 
     this.logger.debug(`Initialized ${className}`, { teamId, baseUrl });
 

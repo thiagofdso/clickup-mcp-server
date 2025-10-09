@@ -80,14 +80,17 @@ export function startSSEServer() {
         origin: req.headers.origin
       });
       if (configuration.headerAuthentication) {
-        const apiKey = req.headers['x-clickup-api-key'] as string;
-        const teamId = req.headers['x-clickup-team-id'] as string;
-        if (apiKey && teamId) {
-          if (!req.body._meta) {
-            req.body._meta = {};
+        const apiKey = req.headers['x-clickup-api-key'] as string | undefined;
+        if (
+          apiKey &&
+          req.body?.method === 'tools/call' &&
+          typeof req.body.params === 'object' &&
+          req.body.params !== null
+        ) {
+          if (!req.body.params._meta) {
+            req.body.params._meta = {};
           }
-          req.body._meta.apiKey = apiKey;
-          req.body._meta.teamId = teamId;
+          req.body.params._meta.apiKey = apiKey;
         }
       }
 

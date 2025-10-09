@@ -94,12 +94,11 @@ Example:
 
 For multi-user or per-request authentication scenarios, you can enable header-based authentication by setting the `HEADER_AUTHENTICATION` environment variable to `true`.
 
-When this mode is enabled, the server will expect the following headers with each request:
+When this mode is enabled, each request must include:
 
 - `X-ClickUp-API-Key`: The ClickUp API key for the user making the request.
-- `X-ClickUp-Team-ID`: The ClickUp Team ID for the user's workspace.
 
-In this mode, the global `CLICKUP_API_KEY` and `CLICKUP_TEAM_ID` environment variables are not required.
+Configure the workspace once via the `CLICKUP_TEAM_ID` environment variable (or `--env CLICKUP_TEAM_ID=...`). The global `CLICKUP_API_KEY` becomes optional in this mode because the per-request header supplies the credential.
 
 Example:
 ```json
@@ -112,7 +111,8 @@ Example:
         "@taazkareem/clickup-mcp-server@latest"
       ],
       "env": {
-        "HEADER_AUTHENTICATION": "true"
+        "HEADER_AUTHENTICATION": "true",
+        "CLICKUP_TEAM_ID": "your-team-id"
       }
     }
   }
@@ -125,7 +125,6 @@ POST /mcp HTTP/1.1
 Host: 127.0.0.1:3231
 Content-Type: application/json
 X-ClickUp-API-Key: your-user-api-key
-X-ClickUp-Team-ID: your-user-team-id
 
 {
   ...
@@ -220,6 +219,11 @@ Available configuration options:
 | `ENABLE_ORIGIN_VALIDATION` | Validate Origin header against whitelist | `false` |
 | `ENABLE_RATE_LIMIT` | Enable rate limiting protection | `false` |
 | `HEADER_AUTHENTICATION` | Enable header-based authentication | `false` |
+| `PROXY_AUTHENTICATION` | HTTP/HTTPS proxy URL for ClickUp API requests (e.g. `http://user:pass@host:port`) | unset |
+
+### Proxy Configuration
+
+Set `PROXY_AUTHENTICATION` to a full proxy URL when outbound ClickUp API traffic must traverse an HTTP or HTTPS proxy. The base service disables Axios auto-proxy detection and routes every request through the supplied agent.
 
 ### 🔒 Security Features
 
