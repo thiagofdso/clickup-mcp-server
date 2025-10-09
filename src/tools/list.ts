@@ -13,7 +13,7 @@ import {
   CreateListData, 
   ClickUpList
 } from '../services/clickup/types.js';
-import { listService, workspaceService } from '../services/shared.js';
+import { ClickUpServices } from '../services/clickup/index.js';
 import config from '../config.js';
 import { sponsorService } from '../utils/sponsor-service.js';
 
@@ -187,7 +187,8 @@ export const deleteListTool = {
  * Helper function to find a list ID by name
  * Uses the ClickUp service's global list search functionality
  */
-export async function findListIDByName(workspaceService: any, listName: string): Promise<{ id: string; name: string } | null> {
+export async function findListIDByName(services: ClickUpServices, listName: string): Promise<{ id: string; name: string } | null> {
+  const { workspace: workspaceService } = services;
   // Use workspace service to find the list in the hierarchy
   const hierarchy = await workspaceService.getWorkspaceHierarchy();
   const listInfo = workspaceService.findIDByNameInHierarchy(hierarchy, listName, 'list');
@@ -199,7 +200,8 @@ export async function findListIDByName(workspaceService: any, listName: string):
  * Handler for the create_list tool
  * Creates a new list directly in a space
  */
-export async function handleCreateList(parameters: any) {
+export async function handleCreateList(services: ClickUpServices, parameters: any) {
+  const { list: listService, workspace: workspaceService } = services;
   const { name, spaceId, spaceName, content, dueDate, priority, assignee, status } = parameters;
   
   // Validate required fields
@@ -258,7 +260,8 @@ export async function handleCreateList(parameters: any) {
  * Handler for the create_list_in_folder tool
  * Creates a new list inside a folder
  */
-export async function handleCreateListInFolder(parameters: any) {
+export async function handleCreateListInFolder(services: ClickUpServices, parameters: any) {
+  const { list: listService, workspace: workspaceService } = services;
   const { name, folderId, folderName, spaceId, spaceName, content, status } = parameters;
   
   // Validate required fields
@@ -335,14 +338,15 @@ export async function handleCreateListInFolder(parameters: any) {
  * Handler for the get_list tool
  * Retrieves details about a specific list
  */
-export async function handleGetList(parameters: any) {
+export async function handleGetList(services: ClickUpServices, parameters: any) {
+  const { list: listService, workspace: workspaceService } = services;
   const { listId, listName } = parameters;
   
   let targetListId = listId;
   
   // If no listId provided but listName is, look up the list ID
   if (!targetListId && listName) {
-    const listResult = await findListIDByName(workspaceService, listName);
+    const listResult = await findListIDByName(services, listName);
     if (!listResult) {
       throw new Error(`List "${listName}" not found`);
     }
@@ -376,14 +380,15 @@ export async function handleGetList(parameters: any) {
  * Handler for the update_list tool
  * Updates an existing list's properties
  */
-export async function handleUpdateList(parameters: any) {
+export async function handleUpdateList(services: ClickUpServices, parameters: any) {
+  const { list: listService, workspace: workspaceService } = services;
   const { listId, listName, name, content, status } = parameters;
   
   let targetListId = listId;
   
   // If no listId provided but listName is, look up the list ID
   if (!targetListId && listName) {
-    const listResult = await findListIDByName(workspaceService, listName);
+    const listResult = await findListIDByName(services, listName);
     if (!listResult) {
       throw new Error(`List "${listName}" not found`);
     }
@@ -429,14 +434,15 @@ export async function handleUpdateList(parameters: any) {
  * Handler for the delete_list tool
  * Permanently removes a list from the workspace
  */
-export async function handleDeleteList(parameters: any) {
+export async function handleDeleteList(services: ClickUpServices, parameters: any) {
+  const { list: listService, workspace: workspaceService } = services;
   const { listId, listName } = parameters;
   
   let targetListId = listId;
   
   // If no listId provided but listName is, look up the list ID
   if (!targetListId && listName) {
-    const listResult = await findListIDByName(workspaceService, listName);
+    const listResult = await findListIDByName(services, listName);
     if (!listResult) {
       throw new Error(`List "${listName}" not found`);
     }
@@ -462,4 +468,4 @@ export async function handleDeleteList(parameters: any) {
   } catch (error: any) {
     return sponsorService.createErrorResponse(`Failed to delete list: ${error.message}`);
   }
-} 
+}

@@ -79,6 +79,21 @@ export function startSSEServer() {
         contentType: req.headers['content-type'],
         origin: req.headers.origin
       });
+      if (configuration.headerAuthentication) {
+        const apiKey = req.headers['x-clickup-api-key'] as string | undefined;
+        if (
+          apiKey &&
+          req.body?.method === 'tools/call' &&
+          typeof req.body.params === 'object' &&
+          req.body.params !== null
+        ) {
+          if (!req.body.params._meta) {
+            req.body.params._meta = {};
+          }
+          req.body.params._meta.apiKey = apiKey;
+        }
+      }
+
       let transport: StreamableHTTPServerTransport;
 
       if (sessionId && transports.streamable[sessionId]) {

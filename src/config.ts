@@ -38,6 +38,8 @@ for (let i = 0; i < args.length; i++) {
     if (key === 'SSE_PORT') envArgs.ssePort = value;
     if (key === 'ENABLE_STDIO') envArgs.enableStdio = value;
     if (key === 'PORT') envArgs.port = value;
+    if (key === 'HEADER_AUTHENTICATION') envArgs.headerAuthentication = value;
+    if (key === 'PROXY_AUTHENTICATION') envArgs.proxyAuthentication = value;
     i++;
   }
 }
@@ -80,6 +82,8 @@ interface Config {
   ssePort: number;
   enableStdio: boolean;
   port?: string;
+  headerAuthentication: boolean;
+  proxyAuthentication?: string;
   // Security configuration (opt-in for backwards compatibility)
   enableSecurityFeatures: boolean;
   enableOriginValidation: boolean;
@@ -157,19 +161,26 @@ const configuration: Config = {
   sslKeyPath: process.env.SSL_KEY_PATH,
   sslCertPath: process.env.SSL_CERT_PATH,
   sslCaPath: process.env.SSL_CA_PATH,
+  headerAuthentication: parseBoolean(envArgs.headerAuthentication || process.env.HEADER_AUTHENTICATION, false),
+  proxyAuthentication: envArgs.proxyAuthentication || process.env.PROXY_AUTHENTICATION,
 };
 
 // Don't log to console as it interferes with JSON-RPC communication
 
-// Validate only the required variables are present
-const requiredVars = ['clickupApiKey', 'clickupTeamId'];
-const missingEnvVars = requiredVars
-  .filter(key => !configuration[key as keyof Config])
-  .map(key => key);
+// Validate required variables with support for header-based API key
+const missingEnvVars: string[] = [];
+
+if (!configuration.clickupTeamId) {
+  missingEnvVars.push('clickupTeamId');
+}
+
+if (!configuration.headerAuthentication && !configuration.clickupApiKey) {
+  missingEnvVars.push('clickupApiKey');
+}
 
 if (missingEnvVars.length > 0) {
   throw new Error(
-    `Missing required environment variables: ${missingEnvVars.join(', ')}`
+    `Missing required configuration: ${missingEnvVars.join(', ')}`
   );
 }
 

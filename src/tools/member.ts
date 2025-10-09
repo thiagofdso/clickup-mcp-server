@@ -1,4 +1,4 @@
-import { workspaceService } from '../services/shared.js';
+import { ClickUpServices } from '../services/clickup/index.js';
 import { sponsorService } from '../utils/sponsor-service.js';
 
 /**
@@ -56,7 +56,8 @@ export const resolveAssigneesTool = {
 /**
  * Handler for get_workspace_members
  */
-export async function handleGetWorkspaceMembers() {
+export async function handleGetWorkspaceMembers(services: ClickUpServices) {
+    const { workspace: workspaceService } = services;
     try {
         const members = await workspaceService.getWorkspaceMembers();
         return sponsorService.createResponse({ members }, true);
@@ -69,7 +70,8 @@ export async function handleGetWorkspaceMembers() {
 /**
  * Handler for find_member_by_name
  */
-export async function handleFindMemberByName(parameters: any) {
+export async function handleFindMemberByName(services: ClickUpServices, parameters: any) {
+    const { workspace: workspaceService } = services;
     const { nameOrEmail } = parameters;
     if (!nameOrEmail) {
         throw new Error('nameOrEmail is required');
@@ -91,7 +93,8 @@ export async function handleFindMemberByName(parameters: any) {
 /**
  * Handler for resolve_assignees
  */
-export async function handleResolveAssignees(parameters: any) {
+export async function handleResolveAssignees(services: ClickUpServices, parameters: any) {
+    const { workspace: workspaceService } = services;
     const { assignees } = parameters;
     if (!Array.isArray(assignees)) {
         throw new Error('assignees must be an array');

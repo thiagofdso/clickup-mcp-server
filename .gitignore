@@ -50,3 +50,4 @@ ssl/
 *.pem
 *.p12
 *.pfx
+curl.txt

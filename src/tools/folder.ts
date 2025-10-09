@@ -12,12 +12,9 @@ import {
   CreateFolderData, 
   ClickUpFolder
 } from '../services/clickup/types.js';
-import { clickUpServices } from '../services/shared.js';
+import { ClickUpServices } from '../services/clickup/index.js';
 import config from '../config.js';
 import { sponsorService } from '../utils/sponsor-service.js';
-
-// Use shared services instance
-const { folder: folderService, workspace: workspaceService } = clickUpServices;
 
 /**
  * Tool definition for creating a folder
@@ -151,7 +148,8 @@ export const deleteFolderTool = {
  * Handler for the create_folder tool
  * Creates a new folder in a space
  */
-export async function handleCreateFolder(parameters: any) {
+export async function handleCreateFolder(services: ClickUpServices, parameters: any) {
+  const { folder: folderService, workspace: workspaceService } = services;
   const { name, spaceId, spaceName, override_statuses } = parameters;
   
   // Validate required fields
@@ -204,7 +202,8 @@ export async function handleCreateFolder(parameters: any) {
  * Handler for the get_folder tool
  * Retrieves details about a specific folder
  */
-export async function handleGetFolder(parameters: any) {
+export async function handleGetFolder(services: ClickUpServices, parameters: any) {
+  const { folder: folderService, workspace: workspaceService } = services;
   const { folderId, folderName, spaceId, spaceName } = parameters;
   
   let targetFolderId = folderId;
@@ -258,7 +257,8 @@ export async function handleGetFolder(parameters: any) {
  * Handler for the update_folder tool
  * Updates an existing folder's properties
  */
-export async function handleUpdateFolder(parameters: any) {
+export async function handleUpdateFolder(services: ClickUpServices, parameters: any) {
+  const { folder: folderService, workspace: workspaceService } = services;
   const { folderId, folderName, name, override_statuses, spaceId, spaceName } = parameters;
   
   let targetFolderId = folderId;
@@ -323,7 +323,8 @@ export async function handleUpdateFolder(parameters: any) {
  * Handler for the delete_folder tool
  * Permanently removes a folder from the workspace
  */
-export async function handleDeleteFolder(parameters: any) {
+export async function handleDeleteFolder(services: ClickUpServices, parameters: any) {
+  const { folder: folderService, workspace: workspaceService } = services;
   const { folderId, folderName, spaceId, spaceName } = parameters;
   
   let targetFolderId = folderId;
@@ -371,4 +372,4 @@ export async function handleDeleteFolder(parameters: any) {
   } catch (error: any) {
     return sponsorService.createErrorResponse(`Failed to delete folder: ${error.message}`);
   }
-} 
+}

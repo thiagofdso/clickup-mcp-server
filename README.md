@@ -60,6 +60,77 @@ Or use this npx command:
 
 **Obs: if you don't pass "DOCUMENT_SUPPORT": "true", the default is false and document support will not be active.**
 
+## Authentication
+
+This server supports two authentication methods:
+
+### 1. Global API Key (Default)
+
+By default, the server uses a single global ClickUp API key and Team ID for all requests. These are provided via environment variables:
+
+- `CLICKUP_API_KEY`: Your ClickUp API key.
+- `CLICKUP_TEAM_ID`: Your ClickUp Team ID.
+
+Example:
+```json
+{
+  "mcpServers": {
+    "ClickUp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@taazkareem/clickup-mcp-server@latest"
+      ],
+      "env": {
+        "CLICKUP_API_KEY": "your-api-key",
+        "CLICKUP_TEAM_ID": "your-team-id"
+      }
+    }
+  }
+}
+```
+
+### 2. Header-Based Authentication (Per-Request)
+
+For multi-user or per-request authentication scenarios, you can enable header-based authentication by setting the `HEADER_AUTHENTICATION` environment variable to `true`.
+
+When this mode is enabled, each request must include:
+
+- `X-ClickUp-API-Key`: The ClickUp API key for the user making the request.
+
+Configure the workspace once via the `CLICKUP_TEAM_ID` environment variable (or `--env CLICKUP_TEAM_ID=...`). The global `CLICKUP_API_KEY` becomes optional in this mode because the per-request header supplies the credential.
+
+Example:
+```json
+{
+  "mcpServers": {
+    "ClickUp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@taazkareem/clickup-mcp-server@latest"
+      ],
+      "env": {
+        "HEADER_AUTHENTICATION": "true",
+        "CLICKUP_TEAM_ID": "your-team-id"
+      }
+    }
+  }
+}
+```
+
+When making a request to the server, include the headers:
+```
+POST /mcp HTTP/1.1
+Host: 127.0.0.1:3231
+Content-Type: application/json
+X-ClickUp-API-Key: your-user-api-key
+
+{
+  ...
+}
+```
+
 ### Tool Filtering
 
 You can control which tools are available using two complementary environment variables:
@@ -147,6 +218,12 @@ Available configuration options:
 | `ENABLE_HTTPS` | Enable HTTPS/TLS encryption | `false` |
 | `ENABLE_ORIGIN_VALIDATION` | Validate Origin header against whitelist | `false` |
 | `ENABLE_RATE_LIMIT` | Enable rate limiting protection | `false` |
+| `HEADER_AUTHENTICATION` | Enable header-based authentication | `false` |
+| `PROXY_AUTHENTICATION` | HTTP/HTTPS proxy URL for ClickUp API requests (e.g. `http://user:pass@host:port`) | unset |
+
+### Proxy Configuration
+
+Set `PROXY_AUTHENTICATION` to a full proxy URL when outbound ClickUp API traffic must traverse an HTTP or HTTPS proxy. The base service disables Axios auto-proxy detection and routes every request through the supplied agent.
 
 ### 🔒 Security Features
 

@@ -12,8 +12,8 @@ import { TaskService } from './task/index.js';
 import { ClickUpTask, CreateTaskData, UpdateTaskData } from './types.js';
 import { BatchProcessingOptions, BatchResult, processBatch } from '../../utils/concurrency-utils.js';
 import { ClickUpServiceError, ErrorCode } from './base.js';
-import { clickUpServices } from '../shared.js';
 import { findListIDByName } from '../../tools/list.js';
+import { ClickUpServices } from './index.js';
 
 // Create logger instance
 const logger = new Logger('BulkService');
@@ -22,14 +22,14 @@ const logger = new Logger('BulkService');
  * Service for performing bulk operations in ClickUp
  */
 export class BulkService {
-  private taskService: TaskService;
+  private services: ClickUpServices;
 
   /**
    * Create a new bulk service
-   * @param taskService ClickUp Task Service instance
+   * @param services ClickUp Services instance
    */
-  constructor(taskService: TaskService) {
-    this.taskService = taskService;
+  constructor(services: ClickUpServices) {
+    this.services = services;
     logger.info('BulkService initialized');
   }
 
@@ -53,7 +53,7 @@ export class BulkService {
 
     try {
       // First validate that the list exists - do this once for all tasks
-      await this.taskService.validateListExists(listId);
+      await this.services.task.validateListExists(listId);
 
       // Process the tasks in batches
       return await processBatch(
@@ -64,7 +64,7 @@ export class BulkService {
           });
           
           // Reuse the single-task creation method
-          return this.taskService.createTask(listId, task);
+          return this.services.task.createTask(listId, task);
         },
         options
       );
@@ -88,7 +88,7 @@ export class BulkService {
    */
   private async findTaskInList(taskName: string, listName: string): Promise<string> {
     try {
-      const result = await this.taskService.findTasks({
+      const result = await this.services.task.findTasks({
         taskName,
         listName,
         allowMultipleMatches: false,
@@ -128,7 +128,7 @@ export class BulkService {
     }
 
     if (customTaskId) {
-      const resolvedTask = await this.taskService.getTaskByCustomId(customTaskId);
+      const resolvedTask = await this.services.task.getTaskByCustomId(customTaskId);
       return resolvedTask.id;
     }
 
@@ -160,7 +160,7 @@ export class BulkService {
         async (task) => {
           const { taskId, taskName, listName, customTaskId, ...updateData } = task;
           const resolvedTaskId = await this.resolveTaskId({ taskId, taskName, listName, customTaskId });
-          return await this.taskService.updateTask(resolvedTaskId, updateData);
+          return await this.services.task.updateTask(resolvedTaskId, updateData);
         },
         options
       );
@@ -192,7 +192,7 @@ export class BulkService {
       // assume it's a list name and try to resolve it
       if (!/^\d+$/.test(targetListId)) {
         logger.info(`Target list appears to be a name: "${targetListId}", attempting to resolve`);
-        const listInfo = await findListIDByName(clickUpServices.workspace, targetListId);
+        const listInfo = await findListIDByName(this.services, targetListId);
         if (!listInfo) {
           throw new ClickUpServiceError(
             `Target list "${targetListId}" not found`,
@@ -204,13 +204,13 @@ export class BulkService {
       }
 
       // Validate the destination list exists
-      await this.taskService.validateListExists(resolvedTargetListId);
+      await this.services.task.validateListExists(resolvedTargetListId);
 
       return await processBatch(
         tasks,
         async (task) => {
           const resolvedTaskId = await this.resolveTaskId(task);
-          return await this.taskService.moveTask(resolvedTaskId, resolvedTargetListId);
+          return await this.services.task.moveTask(resolvedTaskId, resolvedTargetListId);
         },
         options
       );
@@ -237,7 +237,7 @@ export class BulkService {
         tasks,
         async (task) => {
           const resolvedTaskId = await this.resolveTaskId(task);
-          await this.taskService.deleteTask(resolvedTaskId);
+          await this.services.task.deleteTask(resolvedTaskId);
         },
         options
       );

@@ -9,7 +9,7 @@
  */
 
 import { ClickUpComment, ClickUpTask, TaskPriority, UpdateTaskData, TaskFilters, toTaskPriority, CreateTaskData, TaskSummary } from '../../services/clickup/types.js';
-import { clickUpServices } from '../../services/shared.js';
+import { ClickUpServices } from '../../services/clickup/index.js';
 import { BulkService } from '../../services/clickup/bulk.js';
 import { BatchResult } from '../../utils/concurrency-utils.js';
 import { parseDueDate } from '../utils.js';
@@ -26,15 +26,8 @@ import { TaskService } from '../../services/clickup/task/task-service.js';
 import { ExtendedTaskFilters } from '../../services/clickup/types.js';
 import { handleResolveAssignees } from '../member.js';
 import { findListIDByName } from '../list.js';
-import { workspaceService } from '../../services/shared.js';
 import { isNameMatch } from '../../utils/resolver-utils.js';
 import { Logger } from '../../logger.js';
-
-// Use shared services instance
-const { task: taskService, list: listService } = clickUpServices;
-
-// Create a bulk service instance that uses the task service
-const bulkService = new BulkService(taskService);
 
 // Create a logger instance for task handlers
 const logger = new Logger('TaskHandlers');
@@ -112,7 +105,7 @@ function parseTimeEstimate(timeEstimate: string | number): number {
 /**
  * Resolve assignees from mixed input (user IDs, emails, usernames) to user IDs
  */
-async function resolveAssignees(assignees: (number | string)[]): Promise<number[]> {
+async function resolveAssignees(services: ClickUpServices, assignees: (number | string)[]): Promise<number[]> {
   if (!assignees || !Array.isArray(assignees) || assignees.length === 0) {
     return [];
   }
@@ -139,7 +132,7 @@ async function resolveAssignees(assignees: (number | string)[]): Promise<number[
   // Resolve emails/usernames to user IDs if any
   if (toResolve.length > 0) {
     try {
-      const result = await handleResolveAssignees({ assignees: toResolve });
+      const result = await handleResolveAssignees(services, { assignees: toResolve });
       // The result is wrapped by sponsorService.createResponse, so we need to parse the JSON
       if (result.content && Array.isArray(result.content) && result.content.length > 0) {
         const dataText = result.content[0].text;
@@ -164,7 +157,7 @@ async function resolveAssignees(assignees: (number | string)[]): Promise<number[
 /**
  * Build task update data from parameters
  */
-async function buildUpdateData(params: any): Promise<UpdateTaskData> {
+async function buildUpdateData(services: ClickUpServices, params: any): Promise<UpdateTaskData> {
   const updateData: UpdateTaskData = {};
 
   if (params.name !== undefined) updateData.name = params.name;
@@ -231,7 +224,7 @@ async function buildUpdateData(params: any): Promise<UpdateTaskData> {
       }
     }
 
-    const resolvedAssignees = await resolveAssignees(assigneesArray);
+    const resolvedAssignees = await resolveAssignees(services, assigneesArray);
 
     // Store the resolved assignees for processing in the updateTask method
     // The actual add/rem logic will be handled there based on current vs new assignees
@@ -245,7 +238,7 @@ async function buildUpdateData(params: any): Promise<UpdateTaskData> {
  * Core function to find a task by ID or name
  * This consolidates all task lookup logic in one place for consistency
  */
-async function findTask(params: {
+async function findTask(services: ClickUpServices, params: {
   taskId?: string,
   taskName?: string,
   listName?: string,
@@ -253,6 +246,7 @@ async function findTask(params: {
   requireId?: boolean,
   includeSubtasks?: boolean
 }) {
+  const { task: taskService, workspace: workspaceService } = services;
   const { taskId, taskName, listName, customTaskId, requireId = false, includeSubtasks = false } = params;
 
   // Validate that we have enough information to identify a task
@@ -295,7 +289,7 @@ async function findTask(params: {
 
     // Special optimized path for taskName + listName combination
     if (taskName && listName) {
-      const listId = await resolveListIdWithValidation(null, listName);
+      const listId = await resolveListIdWithValidation(services, null, listName);
 
       // Get all tasks in the list
       const allTasks = await taskService.getTasks(listId);
@@ -452,9 +446,9 @@ function findTaskByName(tasks, name) {
 /**
  * Handler for getting a task - uses the consolidated findTask function
  */
-export async function getTaskHandler(params) {
+export async function getTaskHandler(services: ClickUpServices, params) {
   try {
-    const result = await findTask({
+    const result = await findTask(services, {
       taskId: params.taskId,
       taskName: params.taskName,
       listName: params.listName,
@@ -475,7 +469,7 @@ export async function getTaskHandler(params) {
 /**
  * Get task ID from various identifiers - uses the consolidated findTask function
  */
-export async function getTaskId(taskId?: string, taskName?: string, listName?: string, customTaskId?: string, requireId?: boolean, includeSubtasks?: boolean): Promise<string> {
+export async function getTaskId(services: ClickUpServices, taskId?: string, taskName?: string, listName?: string, customTaskId?: string, requireId?: boolean, includeSubtasks?: boolean): Promise<string> {
   // Check task context cache first if we have a task name
   if (taskName && !taskId && !customTaskId) {
     const cachedId = getCachedTaskContext(taskName);
@@ -484,7 +478,7 @@ export async function getTaskId(taskId?: string, taskName?: string, listName?: s
     }
   }
 
-  const result = await findTask({
+  const result = await findTask(services, {
     taskId,
     taskName,
     listName,
@@ -504,9 +498,9 @@ export async function getTaskId(taskId?: string, taskName?: string, listName?: s
 /**
  * Process a list identification validation, returning the list ID
  */
-async function getListId(listId?: string, listName?: string): Promise<string> {
+async function getListId(services: ClickUpServices, listId?: string, listName?: string): Promise<string> {
   validateListIdentification(listId, listName);
-  return await resolveListIdWithValidation(listId, listName);
+  return await resolveListIdWithValidation(services, listId, listName);
 }
 
 /**
@@ -529,7 +523,7 @@ function buildTaskFilters(params: any): TaskFilters {
  * Map tasks for bulk operations, resolving task IDs
  * Uses smart disambiguation for tasks without list context
  */
-async function mapTaskIds(tasks: any[]): Promise<string[]> {
+async function mapTaskIds(services: ClickUpServices, tasks: any[]): Promise<string[]> {
   return Promise.all(tasks.map(async (task) => {
     const validationResult = validateTaskIdentification(
       { taskId: task.taskId, taskName: task.taskName, listName: task.listName, customTaskId: task.customTaskId },
@@ -540,7 +534,7 @@ async function mapTaskIds(tasks: any[]): Promise<string[]> {
       throw new Error(validationResult.errorMessage);
     }
 
-    return await getTaskId(task.taskId, task.taskName, task.listName, task.customTaskId);
+    return await getTaskId(services, task.taskId, task.taskName, task.listName, task.customTaskId);
   }));
 }
 
@@ -551,7 +545,8 @@ async function mapTaskIds(tasks: any[]): Promise<string[]> {
 /**
  * Handler for creating a task
  */
-export async function createTaskHandler(params) {
+export async function createTaskHandler(services: ClickUpServices, params) {
+  const { task: taskService } = services;
   const {
     name,
     description,
@@ -571,7 +566,7 @@ export async function createTaskHandler(params) {
   // Use our helper function to validate and convert priority
   const priority = toTaskPriority(params.priority);
 
-  const listId = await getListId(params.listId, params.listName);
+  const listId = await getListId(services, params.listId, params.listName);
 
   // Resolve assignees if provided
   let resolvedAssignees = undefined;
@@ -586,7 +581,7 @@ export async function createTaskHandler(params) {
         assigneesArray = [];
       }
     }
-    resolvedAssignees = await resolveAssignees(assigneesArray);
+    resolvedAssignees = await resolveAssignees(services, assigneesArray);
   }
 
   const taskData: CreateTaskData = {
@@ -627,7 +622,7 @@ export async function createTaskHandler(params) {
  * Handler for updating a task
  */
 export async function updateTaskHandler(
-  taskService: TaskService,
+  services: ClickUpServices,
   params: UpdateTaskData & {
     taskId?: string;
     taskName?: string;
@@ -635,6 +630,7 @@ export async function updateTaskHandler(
     customTaskId?: string;
   }
 ): Promise<ClickUpTask> {
+  const { task: taskService } = services;
   const { taskId, taskName, listName, customTaskId, ...rawUpdateData } = params;
 
   // Validate task identification with global lookup enabled
@@ -644,14 +640,14 @@ export async function updateTaskHandler(
   }
 
   // Build properly formatted update data from raw parameters (now async)
-  const updateData = await buildUpdateData(rawUpdateData);
+  const updateData = await buildUpdateData(services, rawUpdateData);
 
   // Validate update data
   validateTaskUpdateData(updateData);
 
   try {
     // Get the task ID using global lookup
-    const id = await getTaskId(taskId, taskName, listName, customTaskId);
+    const id = await getTaskId(services, taskId, taskName, listName, customTaskId);
     return await taskService.updateTask(id, updateData);
   } catch (error) {
     throw new Error(`Failed to update task: ${error instanceof Error ? error.message : String(error)}`);
@@ -661,21 +657,23 @@ export async function updateTaskHandler(
 /**
  * Handler for moving a task
  */
-export async function moveTaskHandler(params) {
-  const taskId = await getTaskId(params.taskId, params.taskName, undefined, params.customTaskId, false);
-  const listId = await getListId(params.listId, params.listName);
+export async function moveTaskHandler(services: ClickUpServices, params) {
+  const { task: taskService } = services;
+  const taskId = await getTaskId(services, params.taskId, params.taskName, undefined, params.customTaskId, false);
+  const listId = await getListId(services, params.listId, params.listName);
   return await taskService.moveTask(taskId, listId);
 }
 
 /**
  * Handler for duplicating a task
  */
-export async function duplicateTaskHandler(params) {
-  const taskId = await getTaskId(params.taskId, params.taskName, undefined, params.customTaskId, false);
+export async function duplicateTaskHandler(services: ClickUpServices, params) {
+  const { task: taskService } = services;
+  const taskId = await getTaskId(services, params.taskId, params.taskName, undefined, params.customTaskId, false);
   let listId;
 
   if (params.listId || params.listName) {
-    listId = await getListId(params.listId, params.listName);
+    listId = await getListId(services, params.listId, params.listName);
   }
 
   return await taskService.duplicateTask(taskId, listId);
@@ -684,16 +682,18 @@ export async function duplicateTaskHandler(params) {
 /**
  * Handler for getting tasks
  */
-export async function getTasksHandler(params) {
-  const listId = await getListId(params.listId, params.listName);
+export async function getTasksHandler(services: ClickUpServices, params) {
+  const { task: taskService } = services;
+  const listId = await getListId(services, params.listId, params.listName);
   return await taskService.getTasks(listId, buildTaskFilters(params));
 }
 
 /**
  * Handler for getting task comments
  */
-export async function getTaskCommentsHandler(params) {
-  const taskId = await getTaskId(params.taskId, params.taskName, params.listName);
+export async function getTaskCommentsHandler(services: ClickUpServices, params) {
+  const { task: taskService } = services;
+  const taskId = await getTaskId(services, params.taskId, params.taskName, params.listName);
   const { start, startId } = params;
   return await taskService.getTaskComments(taskId, start, startId);
 }
@@ -701,7 +701,8 @@ export async function getTaskCommentsHandler(params) {
 /**
  * Handler for creating a task comment
  */
-export async function createTaskCommentHandler(params) {
+export async function createTaskCommentHandler(services: ClickUpServices, params) {
+  const { task: taskService } = services;
   // Validate required parameters
   if (!params.commentText) {
     throw new Error('Comment text is required');
@@ -709,7 +710,7 @@ export async function createTaskCommentHandler(params) {
 
   try {
     // Resolve the task ID
-    const taskId = await getTaskId(params.taskId, params.taskName, params.listName);
+    const taskId = await getTaskId(services, params.taskId, params.taskName, params.listName);
 
     // Extract other parameters with defaults
     const {
@@ -783,9 +784,10 @@ function wouldExceedTokenLimit(response: any): boolean {
  * Handler for getting workspace tasks with filtering
  */
 export async function getWorkspaceTasksHandler(
-  taskService: TaskService,
+  services: ClickUpServices,
   params: Record<string, any>
 ): Promise<Record<string, any>> {
+  const { task: taskService } = services;
   try {
     // Require at least one filter parameter
     const hasFilter = [
@@ -1022,19 +1024,20 @@ export async function getWorkspaceTasksHandler(
 /**
  * Handler for creating multiple tasks
  */
-export async function createBulkTasksHandler(params: any) {
+export async function createBulkTasksHandler(services: ClickUpServices, params: any) {
+  const bulkService = new BulkService(services);
   const { tasks, listId, listName, options } = params;
 
   // Validate tasks array
   validateBulkTasks(tasks, 'create');
 
   // Validate and resolve list ID
-  const targetListId = await resolveListIdWithValidation(listId, listName);
+  const targetListId = await resolveListIdWithValidation(services, listId, listName);
 
   // Format tasks for creation - resolve assignees for each task
   const formattedTasks: CreateTaskData[] = await Promise.all(tasks.map(async task => {
     // Resolve assignees if provided
-    const resolvedAssignees = task.assignees ? await resolveAssignees(task.assignees) : undefined;
+    const resolvedAssignees = task.assignees ? await resolveAssignees(services, task.assignees) : undefined;
 
     const taskData: CreateTaskData = {
       name: task.name,
@@ -1077,7 +1080,8 @@ export async function createBulkTasksHandler(params: any) {
 /**
  * Handler for updating multiple tasks
  */
-export async function updateBulkTasksHandler(params: any) {
+export async function updateBulkTasksHandler(services: ClickUpServices, params: any) {
+  const bulkService = new BulkService(services);
   const { tasks, options } = params;
 
   // Validate tasks array
@@ -1093,14 +1097,15 @@ export async function updateBulkTasksHandler(params: any) {
 /**
  * Handler for moving multiple tasks
  */
-export async function moveBulkTasksHandler(params: any) {
+export async function moveBulkTasksHandler(services: ClickUpServices, params: any) {
+  const bulkService = new BulkService(services);
   const { tasks, targetListId, targetListName, options } = params;
 
   // Validate tasks array
   validateBulkTasks(tasks, 'move');
 
   // Validate and resolve target list ID
-  const resolvedTargetListId = await resolveListIdWithValidation(targetListId, targetListName);
+  const resolvedTargetListId = await resolveListIdWithValidation(services, targetListId, targetListName);
 
   // Parse bulk options
   const bulkOptions = parseBulkOptions(options);
@@ -1112,7 +1117,8 @@ export async function moveBulkTasksHandler(params: any) {
 /**
  * Handler for deleting multiple tasks
  */
-export async function deleteBulkTasksHandler(params: any) {
+export async function deleteBulkTasksHandler(services: ClickUpServices, params: any) {
+  const bulkService = new BulkService(services);
   const { tasks, options } = params;
 
   // Validate tasks array
@@ -1128,8 +1134,9 @@ export async function deleteBulkTasksHandler(params: any) {
 /**
  * Handler for deleting a task
  */
-export async function deleteTaskHandler(params) {
-  const taskId = await getTaskId(params.taskId, params.taskName, params.listName);
+export async function deleteTaskHandler(services: ClickUpServices, params) {
+  const { task: taskService } = services;
+  const taskId = await getTaskId(services, params.taskId, params.taskName, params.listName);
   await taskService.deleteTask(taskId);
   return true;
-} 
+}
