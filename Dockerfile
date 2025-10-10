@@ -24,12 +24,22 @@ FROM node:18-alpine AS runtime
 # Set the working directory
 WORKDIR /app
 
+# Create a non-root user to run the application
+RUN addgroup -S app && adduser -S app -G app
+
 # Copy the build output and node_modules from the builder stage
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/node_modules ./node_modules
 
 # Copy the entrypoint script if necessary
 COPY --from=builder /app/package.json ./
+COPY --from=builder /app/package-lock.json ./
+
+# Adjust ownership to the non-root user
+RUN chown -R app:app /app
+
+# Switch to the non-root user
+USER app
 
 # Expose the ports used by the server (HTTP 3231 by default, optional HTTPS 3443)
 EXPOSE 3231 3443

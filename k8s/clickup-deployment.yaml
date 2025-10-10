@@ -18,8 +18,22 @@ spec:
         - name: clickup-mcp
           image: ghcr.io/taazkareem/clickup-mcp-server:latest
           imagePullPolicy: IfNotPresent
-          envFrom:
-            - secretRef:
-                name: clickup-mcp-secret
+          env:
+            - name: CLICKUP_API_KEY
+              value: "<replace-with-api-key>"
+            - name: CLICKUP_TEAM_ID
+              value: "9011970959"
+            - name: ENABLE_SSE
+              value: "true"
+            - name: ENABLE_STDIO
+              value: "false"
+            - name: PORT
+              value: "3231"
+            - name: LOG_LEVL
+              value: "DEBUG"
+            - name: HEADER_AUTHENTICATION
+              value: "true"
+            - name: HOST
+              value: "0.0.0.0"
           ports:
             - containerPort: 3231
