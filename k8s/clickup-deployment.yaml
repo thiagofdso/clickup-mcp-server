@@ -21,10 +21,5 @@ spec:
           envFrom:
             - secretRef:
                 name: clickup-mcp-secret
-          env:
-            - name: ENABLE_SSE
-              value: "true"
-            - name: PORT
-              value: "3231"
           ports:
             - containerPort: 3231

@@ -31,8 +31,8 @@ COPY --from=builder /app/node_modules ./node_modules
 # Copy the entrypoint script if necessary
 COPY --from=builder /app/package.json ./
 
-# Expose the desired port (if the server binds to a port)
-EXPOSE 8080
+# Expose the ports used by the server (HTTP 3231 by default, optional HTTPS 3443)
+EXPOSE 3231 3443
 
 # Define the command to run the application
 CMD ["node", "build/index.js"]
