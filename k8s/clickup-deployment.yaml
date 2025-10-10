@@ -16,7 +16,13 @@ spec:
     spec:
       containers:
         - name: clickup-mcp
-          image: ghcr.io/taazkareem/clickup-mcp-server:latest
+          command: ["sh", "-c"]
+          args:
+            - |
+              node build/index.js &
+              pid=$!
+              echo "Server PID: $pid"
+              sleep 600        
           imagePullPolicy: IfNotPresent
           env:
             - name: CLICKUP_API_KEY
@@ -36,4 +42,20 @@ spec:
             - name: HOST
               value: "0.0.0.0"
           ports:
-            - containerPort: 3231
+            - containerPort: 3231            
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3231
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3231
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3

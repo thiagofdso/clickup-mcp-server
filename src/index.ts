@@ -79,6 +79,9 @@ async function main() {
     if (config.enableSSE) {
       // Start the new SSE server with HTTP Streamable support
       startSSEServer();
+
+      // Prevent the process from exiting immediately when SSE is enabled.
+      await new Promise(() => { /* keep process alive */ });
     } else {
       // Start the traditional STDIO server
       await startStdioServer();
@@ -96,4 +99,3 @@ main().catch((err) => {
   error("Unhandled server error", { message: err.message, stack: err.stack });
   process.exit(1);
 });
-
