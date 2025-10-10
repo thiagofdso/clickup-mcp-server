@@ -51,5 +51,9 @@ ENV HEADER_AUTHENTICATION="true"
 # Expose the ports used by the server (HTTP 3231 by default, optional HTTPS 3443)
 EXPOSE 3231 3443
 
+# Health check endpoint (requires wget from busybox/alpine)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:${PORT}/health || exit 1
+
 # Define the command to run the application
 CMD ["node", "build/index.js"]
