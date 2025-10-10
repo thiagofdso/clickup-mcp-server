@@ -30,6 +30,7 @@ import {
   deleteBulkTasksTool,
   attachTaskFileTool,
   getWorkspaceTasksTool,
+  getSprintTasksTool,
   getTaskTimeEntriesTool,
   startTimeTrackingTool,
   stopTimeTrackingTool,
@@ -51,6 +52,7 @@ import {
   handleGetTask,
   handleAttachTaskFile,
   handleGetWorkspaceTasks,
+  handleGetSprintTasks,
   handleGetTaskTimeEntries,
   handleStartTimeTracking,
   handleStopTimeTracking,
@@ -180,6 +182,7 @@ export function configureServer() {
         moveBulkTasksTool,
         deleteBulkTasksTool,
         getWorkspaceTasksTool,
+        getSprintTasksTool,
         getTaskTimeEntriesTool,
         startTimeTrackingTool,
         stopTimeTrackingTool,
@@ -214,7 +217,7 @@ export function configureServer() {
 
   // Register CallTool handler with proper logging
   logger.info("Registering tool handlers", {
-    toolCount: 36,
+    toolCount: 37,
     categories: ["workspace", "task", "time-tracking", "list", "folder", "tag", "member", "document"]
   });
 
@@ -294,6 +297,8 @@ export function configureServer() {
           return handleDeleteBulkTasks(servicesForRequest, params);
         case "get_workspace_tasks":
           return handleGetWorkspaceTasks(servicesForRequest, params);
+        case "get_sprint_tasks":
+          return handleGetSprintTasks(servicesForRequest, params);
         case "create_list":
           return handleCreateList(servicesForRequest, params);
         case "create_list_in_folder":

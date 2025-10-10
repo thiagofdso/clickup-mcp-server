@@ -19,15 +19,19 @@ Criar a tool MCP `get_sprint_tasks` que recebe um `due_date_gt` (obrigatório) e
 1. **Parâmetros & validação**
    - Tool aceita objeto com `due_date_gt` (string `dd/mm/yyyy`). Validar presença e formato.
    - Converter para timestamp em ms reutilizando `parseDueDate` após suportar o padrão, normalizando para o início do dia (00:00).
-2. **Carregar equipe**
-   - Chamar `GET /v2/team` (via novo serviço fino) e extrair membros do `teamId` atual.
-   - Criar estrutura `Set` com IDs numéricos para filtros e pós-filtragem.
+2. **Carregar equipe e listas**
+   - Quando `assignees` não for informado, chamar `GET /v2/team` (via novo serviço fino) e extrair membros do `teamId` atual.
+   - Criar estrutura `Set` com IDs numéricos para filtros e pós-filtragem (usando os IDs fornecidos pelo usuário, se presentes, ou o conjunto da equipe).
+   - Normalizar `list_ids` fornecidos para restringir a busca (quando omitido, buscar em todas as listas disponíveis).
+   - Interpretar `includeSubtasks` (padrão true) e `comments` (padrão false) para controlar a coleta de subtarefas e comentários.
 3. **Buscar tarefas elegíveis**
    - Criar serviço dedicado que chama `GET /v2/team/{team_Id}/task` com:
-     - `assignees[]=memberId` para cada integrante;
-     - `due_date_gt=timestamp`, `include_closed=true`, `subtasks=true`, `include_markdown_description=true`.
+   - `assignees[]=memberId` para cada integrante;
+    - `due_date_gt=timestamp`, `include_closed=true`, `subtasks=true`, `include_markdown_description=true`.
+    - `list_ids[]=listId` quando o usuário fornecer listas específicas.
    - Se necessário refinar para subtarefas isoladas, usar o mesmo endpoint com `parent=taskId`.
-   - Deduplicar resultados e garantir via pós-filtragem local (`due_date >= filtro`, interseção de assignees). Como `assignees[]` aceita múltiplos valores, incluir todos IDs da equipe numa única chamada.
+   - Deduplicar resultados e garantir via pós-filtragem local (`due_date >= filtro`, interseção de assignees, pertencimento às `list_ids` quando informadas). Como `assignees[]` e `list_ids[]` suportam múltiplos valores, enviar todos IDs relevantes numa única chamada.
+   - Respeitar `includeSubtasks`: quando falso, não solicitar subtarefas na API nem montar hierarquia ou contagem de subtasks.
    - Inspirar-se em `getTasks.js` para:
      - construir query params com `URLSearchParams`, preservando Arrays como `key[]`;
      - reconstruir hierarquia pai/filho com `Map` de tarefas por ID antes de aplicar filtros adicionais nas subtarefas.
@@ -61,11 +65,11 @@ Criar a tool MCP `get_sprint_tasks` que recebe um `due_date_gt` (obrigatório) e
 4. Prototipar função que agrega tarefas detalhadas (pseudo-código) antes de criar tool final.
 
 ## Checklist de desenvolvimento
-- [ ] Estender `parseDueDate` para interpretar `dd/mm/yyyy` normalizando para 00:00.
-- [ ] Implementar serviço de membros (`GET /v2/team`) e cache local de IDs.
-- [ ] Criar serviço de tarefas da sprint com `GET /v2/team/{team_Id}/task` aplicando filtros (`due_date_gt`, `assignees[]`, `include_closed`, `subtasks`, `include_markdown_description`).
-- [ ] Implementar reconstrução de hierarquia pai/subtarefa (Map + filtro local).
-- [ ] Integrar coleta de comentários completos (`GET /v2/task/{task_id}/comment` paginado).
-- [ ] Elaborar handler/tool `get_sprint_tasks` com validação de entrada e payload final focado nos campos requeridos.
+- [x] Estender `parseDueDate` para interpretar `dd/mm/yyyy` normalizando para 00:00.
+- [x] Implementar serviço de membros (`GET /v2/team`) e cache local de IDs.
+- [x] Criar serviço de tarefas da sprint com `GET /v2/team/{team_Id}/task` aplicando filtros (`due_date_gt`, `assignees[]`, `include_closed`, `subtasks`, `include_markdown_description`).
+- [x] Implementar reconstrução de hierarquia pai/subtarefa (Map + filtro local).
+- [x] Integrar coleta de comentários completos (`GET /v2/task/{task_id}/comment` paginado).
+- [x] Elaborar handler/tool `get_sprint_tasks` com validação de entrada e payload final focado nos campos requeridos.
 - [ ] Adicionar testes cobrindo conversão de data, filtragem de assignees e agregação de subtarefas/comentários (mocks dos serviços).
 - [ ] Documentar nova tool em `docs/` (exemplos de requisição/resposta, observações sobre timezone e filtros).

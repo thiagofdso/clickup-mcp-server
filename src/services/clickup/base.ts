@@ -108,7 +108,7 @@ export class BaseClickUpService {
   protected readonly defaultRequestSpacing = 600; // Default milliseconds between requests
   protected readonly rateLimit = 100; // Maximum requests per minute (Free Forever plan)
   protected requestSpacing: number; // Current request spacing, can be adjusted
-  protected readonly timeout = 65000; // 65 seconds (safely under the 1-minute window)
+  protected readonly timeout = 125000; // 65 seconds (safely under the 1-minute window)
   protected requestQueue: (() => Promise<any>)[] = [];
   protected processingQueue = false;
   protected lastRateLimitReset: number = 0;

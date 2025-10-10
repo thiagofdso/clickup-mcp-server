@@ -36,6 +36,10 @@ export {
   getWorkspaceTasksTool
 } from './workspace-operations.js';
 
+export {
+  getSprintTasksTool
+} from './sprint-operations.js';
+
 // Re-export time tracking tools and handlers
 export {
   getTaskTimeEntriesTool,
@@ -80,7 +84,8 @@ export {
   deleteBulkTasksHandler,
   
   // Team task operation handlers
-  getWorkspaceTasksHandler
+  getWorkspaceTasksHandler,
+  getSprintTasksHandler
 } from './handlers.js';
 
 // Re-export utilities

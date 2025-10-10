@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clickup-mcp-deployment
+  labels:
+    app: clickup-mcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clickup-mcp
+  template:
+    metadata:
+      labels:
+        app: clickup-mcp
+    spec:
+      containers:
+        - name: clickup-mcp
+          image: ghcr.io/taazkareem/clickup-mcp-server:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: clickup-mcp-secret
+          env:
+            - name: ENABLE_SSE
+              value: "true"
+            - name: PORT
+              value: "3231"
+          ports:
+            - containerPort: 3231

@@ -203,13 +203,23 @@ function parseTimeComponents(hours: string, minutes?: string, meridian?: string)
 /**
  * Helper function to set time on a date object with default fallback
  */
-function setTimeOnDate(date: Date, hours?: string, minutes?: string, meridian?: string): void {
+function setTimeOnDate(
+  date: Date,
+  hours?: string,
+  minutes?: string,
+  meridian?: string,
+  defaultTime: 'start' | 'end' = 'end'
+): void {
   if (hours) {
     const { hours: parsedHours, minutes: parsedMinutes } = parseTimeComponents(hours, minutes, meridian);
     date.setHours(parsedHours, parsedMinutes, 0, 0);
   } else {
-    // Default to end of day if no time specified
-    date.setHours(23, 59, 59, 999);
+    if (defaultTime === 'start') {
+      date.setHours(0, 0, 0, 0);
+    } else {
+      // Default to end of day if no time specified
+      date.setHours(23, 59, 59, 999);
+    }
   }
 }
 
@@ -226,7 +236,7 @@ interface DatePattern {
 /**
  * Consolidated date patterns with enhanced flexibility
  */
-function getDatePatterns(): DatePattern[] {
+function getDatePatterns(defaultTime: 'start' | 'end' = 'end'): DatePattern[] {
   return [
     // Relative day expressions with optional time
     {
@@ -236,7 +246,7 @@ function getDatePatterns(): DatePattern[] {
         const days = parseInt(match[1]);
         const date = new Date();
         date.setDate(date.getDate() + days);
-        setTimeOnDate(date, match[2], match[3], match[4]);
+        setTimeOnDate(date, match[2], match[3], match[4], defaultTime);
         return date;
       }
     },
@@ -249,7 +259,7 @@ function getDatePatterns(): DatePattern[] {
         const weeks = parseInt(match[1]);
         const date = new Date();
         date.setDate(date.getDate() + (weeks * 7));
-        setTimeOnDate(date, match[2], match[3], match[4]);
+        setTimeOnDate(date, match[2], match[3], match[4], defaultTime);
         return date;
       }
     },
@@ -262,7 +272,7 @@ function getDatePatterns(): DatePattern[] {
         const months = parseInt(match[1]);
         const date = new Date();
         date.setMonth(date.getMonth() + months);
-        setTimeOnDate(date, match[2], match[3], match[4]);
+        setTimeOnDate(date, match[2], match[3], match[4], defaultTime);
         return date;
       }
     },
@@ -275,7 +285,7 @@ function getDatePatterns(): DatePattern[] {
         const years = parseInt(match[1]);
         const date = new Date();
         date.setFullYear(date.getFullYear() + years);
-        setTimeOnDate(date, match[2], match[3], match[4]);
+        setTimeOnDate(date, match[2], match[3], match[4], defaultTime);
         return date;
       }
     },
@@ -288,7 +298,7 @@ function getDatePatterns(): DatePattern[] {
         const isYesterday = match[1] === 'yesterday';
         const date = new Date();
         date.setDate(date.getDate() + (isYesterday ? -1 : 1));
-        setTimeOnDate(date, match[2], match[3], match[4]);
+        setTimeOnDate(date, match[2], match[3], match[4], defaultTime);
         return date;
       }
     }
@@ -302,8 +312,13 @@ function getDatePatterns(): DatePattern[] {
  * @param dateString Date string to parse
  * @returns Timestamp in milliseconds or undefined if parsing fails
  */
-export function parseDueDate(dateString: string): number | undefined {
+export function parseDueDate(
+  dateString: string,
+  options?: { defaultTime?: 'start' | 'end' }
+): number | undefined {
   if (!dateString) return undefined;
+
+  const defaultTime = options?.defaultTime ?? 'end';
 
   try {
     // First, try to parse as a direct timestamp
@@ -323,7 +338,7 @@ export function parseDueDate(dateString: string): number | undefined {
     const lowerDate = preprocessed;
 
     // Try enhanced pattern matching first
-    const patterns = getDatePatterns();
+    const patterns = getDatePatterns(defaultTime);
     for (const pattern of patterns) {
       const match = lowerDate.match(pattern.pattern);
       if (match) {
@@ -342,7 +357,7 @@ export function parseDueDate(dateString: string): number | undefined {
 
     // Handle "today" with different options
     if (lowerDate === 'today') {
-      return getEndOfDay();
+      return defaultTime === 'start' ? getStartOfDay() : getEndOfDay();
     }
 
     if (lowerDate === 'today start' || lowerDate === 'start of today') {
@@ -380,7 +395,7 @@ export function parseDueDate(dateString: string): number | undefined {
 
       // Extract time if specified (e.g., "Friday at 3pm", "Saturday 2:30pm")
       const timeMatch = lowerDate.match(/(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
-      setTimeOnDate(targetDate, timeMatch?.[1], timeMatch?.[2], timeMatch?.[3]);
+      setTimeOnDate(targetDate, timeMatch?.[1], timeMatch?.[2], timeMatch?.[3], defaultTime);
 
       return targetDate.getTime();
     }
@@ -403,6 +418,23 @@ export function parseDueDate(dateString: string): number | undefined {
     }
     
     // Handle specific date formats
+    // Format: DD/MM/YYYY with optional time
+    const euDateRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2})(?::(\d{1,2}))?\s*(am|pm)?)?$/i;
+    const euDateMatch = lowerDate.match(euDateRegex);
+
+    if (euDateMatch) {
+      const [_, day, month, year, hours, minutes, meridian] = euDateMatch;
+      const date = new Date(
+        parseInt(year),
+        parseInt(month) - 1,
+        parseInt(day)
+      );
+
+      setTimeOnDate(date, hours, minutes, meridian, defaultTime);
+
+      return date.getTime();
+    }
+
     // Format: MM/DD/YYYY with enhanced time support (handles both "5pm" and "5 pm")
     const usDateRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2})(?::(\d{1,2}))?\s*(am|pm)?)?$/i;
     const usDateMatch = lowerDate.match(usDateRegex);
@@ -416,7 +448,7 @@ export function parseDueDate(dateString: string): number | undefined {
       );
       
       // Add time if specified
-      setTimeOnDate(date, hours, minutes, meridian);
+      setTimeOnDate(date, hours, minutes, meridian, defaultTime);
       
       return date.getTime();
     }
@@ -435,7 +467,7 @@ export function parseDueDate(dateString: string): number | undefined {
       );
 
       // Add time if specified
-      setTimeOnDate(date, hours, minutes, meridian);
+      setTimeOnDate(date, hours, minutes, meridian, defaultTime);
 
       return date.getTime();
     }
@@ -458,7 +490,7 @@ export function parseDueDate(dateString: string): number | undefined {
         );
 
         // Add time if specified
-        setTimeOnDate(date, hours, minutes, meridian);
+        setTimeOnDate(date, hours, minutes, meridian, defaultTime);
 
         return date.getTime();
       }

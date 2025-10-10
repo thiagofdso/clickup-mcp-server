@@ -9,7 +9,7 @@
 | Função | Assinatura | Descrição |
 |--------|------------|-----------|
 | `getRelativeTimestamp` | `(minutes?, hours?, days?, weeks?, months?) => number` | Retorna `Date.now()` ajustado pelos deslocamentos fornecidos. Utilizado internamente como base para expressões do tipo “X from now”. |
-| `parseDueDate` | `(dateString: string) => number \| undefined` | Converte timestamps (`ms`) e várias expressões naturais (ex.: `tomorrow 9am`, `+2 weeks`, `03/10/2025`) em milissegundos. Retorna `undefined` quando não consegue interpretar. |
+| `parseDueDate` | `(dateString: string, options?) => number \| undefined` | Converte timestamps (`ms`) e várias expressões naturais (ex.: `tomorrow 9am`, `+2 weeks`, `03/10/2025`) em milissegundos. Aceita `options.defaultTime` (`'start'` ou `'end'`, padrão `'end'`) para definir o horário padrão quando nenhum horário é informado. Retorna `undefined` quando não consegue interpretar. |
 | `formatDueDate` | `(timestamp: number \| null \| undefined) => string \| undefined` | Gera uma string legível no formato `March 10, 2025, 10:56 PM` (locale `en-US`). Retorna `undefined` para valores inválidos. |
 | `formatRelativeTime` | `(timestamp: string \| number) => string` | Calcula o tempo relativo a partir de `Date.now()`, devolvendo textos como `5 minutes ago` ou `2 months ago`. |
 
@@ -25,7 +25,7 @@
 ## Exemplos de entradas aceitas
 - `yesterday`, `tomorrow 6pm`, `day after tomorrow`
 - `+3 days`, `-2 weeks 8am`, `5 months from now`
-- `03/10/2025`, `9/15 14:30`, `march 10 2025 6:30pm`
+- `03/10/2025`, `10/03/2025`, `9/15 14:30`, `march 10 2025 6:30pm`
 - `1713302400000` (timestamp em milissegundos)
 - `next friday` (retorna a próxima ocorrência; se já passou nesta semana, soma 7 dias)
 - `today` (usa o fim do dia para alinhar com prazos do ClickUp)

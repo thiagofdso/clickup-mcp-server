@@ -183,7 +183,7 @@ export class TaskServiceSearch {
         const sampleTask = tasks[0];
         
         // Check if all tasks would exceed the token limit
-        const estimatedTokensPerTask = (this.core as any).estimateTaskTokens(sampleTask);
+        const estimatedTokensPerTask = this.estimateTaskTokens(sampleTask);
         const estimatedTotalTokens = estimatedTokensPerTask * tasks.length;
         
         // Add 10% overhead for the response wrapper
@@ -204,14 +204,14 @@ export class TaskServiceSearch {
 
       (this.core as any).logOperation('getWorkspaceTasks', {
         totalTasks: tasks.length,
-        estimatedTokens: tasks.reduce((count, task) => count + (this.core as any).estimateTaskTokens(task), 0),
+        estimatedTokens: tasks.reduce((count, task) => count + this.estimateTaskTokens(task), 0),
         usingDetailedFormat: !shouldUseSummary,
         requestedFormat: filters.detail_level || 'auto'
       });
 
       if (shouldUseSummary) {
         return {
-          summaries: tasks.map(task => (this.core as any).formatTaskSummary(task)),
+        summaries: tasks.map(task => this.formatTaskSummary(task)),
           total_count: totalCount,
           has_more: hasMore,
           next_page: nextPage
@@ -1143,4 +1143,3 @@ export class TaskServiceSearch {
     }
   }
 }
-

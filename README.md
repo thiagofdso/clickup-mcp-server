@@ -288,7 +288,7 @@ npm run sse-client
 | ⚡ **Integration Features**                                                                                                                                                                                                                                      | 🏗️ **Architecture & Performance**                                                                                                                                                                                                                                        |
 | • Global name or ID-based lookups<br>• Case-insensitive matching<br>• Markdown formatting support<br>• Built-in rate limiting<br>• Error handling and validation<br>• Comprehensive API coverage                                             | • **70% codebase reduction** for improved performance<br>• **Unified architecture** across all transport types<br>• **Zero code duplication**<br>• **HTTP Streamable transport** (MCP Inspector compatible)<br>• **Legacy SSE support** for backwards compatibility |
 
-## Available Tools (36 Total)
+## Available Tools (37 Total)
 
 | Tool                                                               | Description                     | Required Parameters                                                                                                          |
 | ------------------------------------------------------------------ | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
@@ -300,6 +300,7 @@ npm run sse-client
 | [get_tasks](docs/user-guide.md#task-management)                    | Get tasks from list             | `listId`/`listName`                                                                                                      |
 | [get_task](docs/user-guide.md#task-management)                     | Get single task details         | `taskId`/`taskName` (with smart disambiguation)                                                                          |
 | [get_workspace_tasks](docs/user-guide.md#task-management)          | Get tasks with filtering        | At least one filter (tags, list_ids, space_ids, etc.)                                                                        |
+| [get_sprint_tasks](#sprint-tasks-tool)                             | Sprint tasks by due date filter | `due_date_gt` (dd/mm/yyyy)                                                                                                  |
 | [get_task_comments](docs/user-guide.md#task-management)            | Get comments on a task          | `taskId`/`taskName`                                                                                                      |
 | [create_task_comment](docs/user-guide.md#task-management)          | Add a comment to a task         | `commentText`, (`taskId`/(`taskName`+`listName`))                                                                    |
 | [attach_task_file](docs/user-guide.md#task-management)             | Attach file to a task           | `taskId`/`taskName`, (`file_data` or `file_url`)                                                                     |
@@ -341,6 +342,18 @@ npm run sse-client
 | [update_document_page](docs/user-guide.md#document-management)     | Update a document page          | `workspaceId`/`documentId`, `name`/`sub_title`,`content`/`content_edit_mode`/`content_format`                  |
 
 See [full documentation](docs/user-guide.md) for optional parameters and advanced usage.
+
+### Sprint Tasks Tool
+
+`get_sprint_tasks` returns tasks matching a minimum due date and optional filters. Supported parameters:
+
+- `due_date_gt` (string, obrigatório) — data no formato `dd/mm/yyyy`, normalizada para 00:00.
+- `assignees[]` (opcional) — IDs de responsáveis; se ausente, a busca não aplica filtro de responsáveis.
+- `list_ids[]` (opcional) — limita a consulta a listas específicas.
+- `comments` (booleano, padrão `false`) — quando `true`, recupera e inclui comentários nas tarefas elegíveis.
+- `includeSubtasks` (booleano, padrão `true`) — controla se a API deve incluir subtarefas e se a hierarquia deve ser montada no resultado.
+
+Tarefas duplicadas por múltiplos filtros são deduplicadas pelo ID antes da montagem do payload.
 
 ## Member Management Tools
 

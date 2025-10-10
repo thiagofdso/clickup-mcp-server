@@ -129,6 +129,7 @@ export class TaskServiceCore extends BaseClickUpService {
     if (filters.include_closed_lists !== undefined) params.append('include_closed_lists', String(filters.include_closed_lists));
     if (filters.include_archived_lists !== undefined) params.append('include_archived_lists', String(filters.include_archived_lists));
     if (filters.include_compact_time_entries !== undefined) params.append('include_compact_time_entries', String(filters.include_compact_time_entries));
+    if (filters.include_markdown_description !== undefined) params.append('include_markdown_description', String(filters.include_markdown_description));
     
     // Date filters
     if (filters.due_date_gt) params.append('due_date_gt', String(filters.due_date_gt));
@@ -739,4 +740,3 @@ export class TaskServiceCore extends BaseClickUpService {
     this.logger.debug('Cached task name to ID mapping', { taskName, taskId, listId });
   }
 }
-

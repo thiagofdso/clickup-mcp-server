@@ -172,6 +172,7 @@ export interface ClickUpTask {
   custom_id?: string;
   text_content: string;
   description: string;
+  markdown_description?: string;
   status: ClickUpStatus;
   orderindex: string;
   date_created: string;
@@ -306,6 +307,7 @@ export interface TaskFilters {
   subtasks?: boolean;
   include_subtasks?: boolean;
   include_compact_time_entries?: boolean;
+  include_markdown_description?: boolean;
   custom_fields?: Record<string, any>;
 }
 

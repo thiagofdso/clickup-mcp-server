@@ -1017,6 +1017,60 @@ export async function getWorkspaceTasksHandler(
   }
 }
 
+/**
+ * Handler for sprint tasks retrieval
+ */
+export async function getSprintTasksHandler(
+  services: ClickUpServices,
+  params: { due_date_gt?: string; assignees?: string | string[]; list_ids?: string | string[]; comments?: boolean; includeSubtasks?: boolean }
+) {
+  const rawDate = params?.due_date_gt;
+
+  if (!rawDate || typeof rawDate !== 'string') {
+    throw new Error('Parameter due_date_gt (string, formato dd/mm/yyyy) é obrigatório.');
+  }
+
+  const parsed = parseDueDate(rawDate, { defaultTime: 'start' });
+
+  if (parsed === undefined) {
+    throw new Error('Não foi possível interpretar due_date_gt. Use o formato dd/mm/yyyy.');
+  }
+
+  let assigneeIds: string[] | undefined;
+  if (params.assignees !== undefined) {
+    if (Array.isArray(params.assignees)) {
+      assigneeIds = params.assignees.map(value => String(value).trim()).filter(Boolean);
+    } else {
+      assigneeIds = [String(params.assignees).trim()].filter(Boolean);
+    }
+  }
+
+  let listIds: string[] | undefined;
+  if (params.list_ids !== undefined) {
+    if (Array.isArray(params.list_ids)) {
+      listIds = params.list_ids.map(value => String(value).trim()).filter(Boolean);
+    } else {
+      listIds = [String(params.list_ids).trim()].filter(Boolean);
+    }
+  }
+
+  const includeComments = params.comments === true;
+
+  const includeSubtasks = params.includeSubtasks !== undefined ? Boolean(params.includeSubtasks) : true;
+
+  logger.info('Fetching sprint tasks', { dueDateFilter: parsed, includeComments, includeSubtasks, listIds, assigneeIds });
+
+  const result = await services.sprint.getSprintTasks({
+    dueDateTimestamp: parsed,
+    assigneeIds,
+    listIds,
+    includeComments,
+    includeSubtasks
+  });
+
+  return result;
+}
+
 //=============================================================================
 // BULK TASK OPERATIONS
 //=============================================================================

@@ -35,6 +35,10 @@ import {
   getWorkspaceTasksTool
 } from './workspace-operations.js';
 
+import {
+  getSprintTasksTool
+} from './sprint-operations.js';
+
 // Import handlers
 import {
   createTaskHandler,
@@ -51,6 +55,7 @@ import {
   moveBulkTasksHandler,
   deleteBulkTasksHandler,
   getWorkspaceTasksHandler,
+  getSprintTasksHandler,
 } from './handlers.js';
 import { formatTaskData } from './utilities.js';
 
@@ -157,4 +162,13 @@ export const handleDeleteBulkTasks = createHandlerWrapper(deleteBulkTasksHandler
 export const handleGetWorkspaceTasks = createHandlerWrapper(
   getWorkspaceTasksHandler,
   (response) => response // Pass through the response as is
+);
+
+//=============================================================================
+// SPRINT TASK OPERATIONS - HANDLER IMPLEMENTATIONS
+//=============================================================================
+
+export const handleGetSprintTasks = createHandlerWrapper(
+  getSprintTasksHandler,
+  (response) => response
 );
