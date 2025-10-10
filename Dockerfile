@@ -41,6 +41,13 @@ RUN chown -R app:app /app
 # Switch to the non-root user
 USER app
 
+ENV CLICKUP_TEAM_ID="9011970959"
+ENV ENABLE_SSE="true"
+ENV ENABLE_STDIO="false"
+ENV PORT="3231"
+ENV LOG_LEVL="DEBUG"
+ENV HEADER_AUTHENTICATION="true"
+
 # Expose the ports used by the server (HTTP 3231 by default, optional HTTPS 3443)
 EXPOSE 3231 3443
 
