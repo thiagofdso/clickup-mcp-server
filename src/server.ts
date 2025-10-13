@@ -93,6 +93,12 @@ import {
   findMemberByNameTool, handleFindMemberByName,
   resolveAssigneesTool, handleResolveAssignees
 } from "./tools/member.js";
+import {
+  convertToTimestampTool,
+  convertToDateTool,
+  handleConvertToTimestamp,
+  handleConvertToDate
+} from "./tools/time.js";
 
 import { Logger } from "./logger.js";
 import { clickUpServices } from "./services/shared.js";
@@ -204,6 +210,8 @@ export function configureServer() {
         getWorkspaceMembersTool,
         findMemberByNameTool,
         resolveAssigneesTool,
+        convertToTimestampTool,
+        convertToDateTool,
         ...documentModule()
       ].filter(tool => isToolEnabled(tool.name))
     };
@@ -217,8 +225,8 @@ export function configureServer() {
 
   // Register CallTool handler with proper logging
   logger.info("Registering tool handlers", {
-    toolCount: 37,
-    categories: ["workspace", "task", "time-tracking", "list", "folder", "tag", "member", "document"]
+    toolCount: 39,
+    categories: ["workspace", "task", "time-tracking", "list", "folder", "tag", "member", "document", "utility"]
   });
 
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
@@ -355,6 +363,10 @@ export function configureServer() {
           return handleFindMemberByName(servicesForRequest, params);
         case "resolve_assignees":
           return handleResolveAssignees(servicesForRequest, params);
+        case "convert_to_timestamp":
+          return handleConvertToTimestamp(params);
+        case "convert_to_date":
+          return handleConvertToDate(params);
         default:
           logger.error(`Unknown tool requested: ${name}`);
           const error = new Error(`Unknown tool: ${name}`);
