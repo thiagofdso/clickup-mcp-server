@@ -25,7 +25,7 @@ FROM node:18-alpine AS runtime
 WORKDIR /app
 
 # Create a non-root user to run the application
-RUN addgroup -g 1001490000 -S app && adduser -u 1001490000 -G app -S -D app
+RUN addgroup -S app && adduser -S app -G app
 
 # Copy the build output and node_modules from the builder stage
 COPY --from=builder /app/build ./build
