@@ -16,13 +16,6 @@ spec:
     spec:
       containers:
         - name: clickup-mcp
-          command: ["sh", "-c"]
-          args:
-            - |
-              node build/index.js &
-              pid=$!
-              echo "Server PID: $pid"
-              sleep 600        
           imagePullPolicy: IfNotPresent
           env:
             - name: CLICKUP_TEAM_ID
