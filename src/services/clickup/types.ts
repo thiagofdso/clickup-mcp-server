@@ -681,7 +681,7 @@ export interface CreateDocumentData {
   name: string;
   parent: {
     id: string;
-    type: ClickUpParentType;
+    type: number;
   };
   visibility: 'PUBLIC' | 'PRIVATE';
   create_page: boolean;

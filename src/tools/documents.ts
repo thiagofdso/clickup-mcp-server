@@ -38,7 +38,7 @@ export const createDocumentTool = {
           },
           type: {
             type: "number",
-            enum: [4, 5, 6, 7, 12],
+           // enum: [4, 5, 6, 7, 12], //comentando o enum por compatibilidade com o gemini
             description: "Type of the parent container: 4=space, 5=folder, 6=list, 7=everything, 12=workspace. Most commonly use 6 for lists."
           }
         },
